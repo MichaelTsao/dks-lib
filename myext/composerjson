@@ -1,0 +1,29 @@
+{
+	"name": "mycompany/myext",
+	"description": "test",
+	"keywords": ["yii2", "test"],
+	"homepage": "https://github.com/cebe/markdown#readme",
+	"type": "test library",
+	"license": "test-1",
+	"authors": [
+		{
+			"name": "Jinlin Wang",
+			"email": "285253001@qq.com",
+			"homepage": "http://xxx.xxx.com",
+			"role": "Creator"
+		}
+	],
+	"support": {
+		"issues": "https://xxx.xxx.com",
+		"source": "https://xxx.xxx.com"
+	},
+	"require": {
+		"php": ">=5.4.0",
+		"yiisoft/yii2": "*",
+	},
+	"autoload": {
+		"psr-4": {
+			"mycompany\\myext\\": ""
+		}
+	}
+}
