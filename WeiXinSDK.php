@@ -1,7 +1,9 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
+use yii\redis\Cache;
+use yii\redis\Connection;
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -63,7 +65,7 @@ class WeiXinSDK
 
     private function getJsApiTicket()
     {
-        $ticket = Yii::app()->redis->getClient()->get('wx_ticket');
+        $ticket = Yii::$app->redis->get('wx_ticket');
         if (!$ticket) {
             $accessToken = $this->getAccessToken();
             // 如果是企业号用以下 URL 获取 ticket
@@ -72,7 +74,7 @@ class WeiXinSDK
             $res = json_decode($this->httpGet($url));
             $ticket = $res->ticket;
             if ($ticket) {
-                Yii::app()->redis->getClient()->setex('wx_ticket', 7000, $ticket);
+                Yii::$app->redis->setex('wx_ticket', 7000, $ticket);
             }
         }
         return $ticket;
@@ -88,7 +90,7 @@ class WeiXinSDK
             $res = json_decode($this->httpGet($url));
             $access_token = $res->access_token;
             if ($access_token) {
-                Yii::app()->redis->getClient()->setex('wx_token', 7000, $access_token);
+                Yii::$app->redis->setex('wx_token', 7000, $access_token);
             }
         }
         return $access_token;

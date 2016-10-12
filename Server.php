@@ -1,7 +1,9 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
+use yii\redis\Cache;
+use yii\redis\Connection;
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -21,32 +23,32 @@ class Server {
     }
 
     public function enterRoom($position, $source, $version, $market, $device){
-        Yii::app()->redis->getClient()->set("user_conn:$this->meet_id:$this->uid:$this->conn_id", time());
+        Yii::$app->redis->set("user_conn:$this->meet_id:$this->uid:$this->conn_id", time());
 
         /*
-        Yii::app()->redis->getClient()->hSet("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'source', $source);
-        Yii::app()->redis->getClient()->hSet("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'version', $version);
-        Yii::app()->redis->getClient()->hSet("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'market', $market);
-        Yii::app()->redis->getClient()->hSet("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'device', $device);
+        Yii::$app->redis->hset("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'source', $source);
+        Yii::$app->redis->hset("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'version', $version);
+        Yii::$app->redis->hset("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'market', $market);
+        Yii::$app->redis->hset("user_conn_info:$this->meet_id:$this->uid:$this->conn_id", 'device', $device);
         */
 
         if ($position < 0) {
             $position = 0;
         }
         $key = 'meet_chat:'.$this->meet_id;
-        $msg = Yii::app()->redis->getClient()->lRange($key, $position, -1);
+        $msg = Yii::$app->redis->lrange($key, $position, -1);
         if (!$msg) {
             $msg = array();
         }
         list($pid, $r) = self::makeEnterRoomPkg($this->uid, $this->conn_id, $msg, $this->meet_id, 1, 1);
         Logic::server_request(Yii::app()->params['cserver_ip'], Yii::app()->params['cserver_port'], $pid, $r);
-        Yii::app()->redis->getClient()->set("meet_chat_unread:".$this->meet_id.":".$this->uid, 0);
+        Yii::$app->redis->set("meet_chat_unread:".$this->meet_id.":".$this->uid, 0);
 
         return 0;
     }
 
     public function leaveRoom(){
-        Yii::app()->redis->getClient()->del("user_conn:$this->meet_id:$this->uid:$this->conn_id");
+        Yii::$app->redis->del("user_conn:$this->meet_id:$this->uid:$this->conn_id");
     }
 
     public function chat($to_uid, $message, $secret){
@@ -71,9 +73,9 @@ class Server {
         } else {
             return 4;
         }
-        $conn = Yii::app()->redis->getClient()->keys("user_conn:$this->meet_id:$to_uid:*");
+        $conn = Yii::$app->redis->keys("user_conn:$this->meet_id:$to_uid:*");
         if (!$conn) {
-            Yii::app()->redis->getClient()->incr("meet_chat_unread:".$this->meet_id.":".$to_uid);
+            Yii::$app->redis->incr("meet_chat_unread:".$this->meet_id.":".$to_uid);
             Logic::sendPush();
         }else{
             foreach ($conn as $c) {
@@ -85,7 +87,7 @@ class Server {
                 Logic::server_request(Yii::app()->params['cserver_ip'], Yii::app()->params['cserver_port'], $pid, $data);
             }
         }
-        Yii::app()->redis->getClient()->rPush('meet_chat:'.$this->meet_id, implode('|', array($this->uid, time(), $message)));
+        Yii::$app->redis->rpush('meet_chat:'.$this->meet_id, implode('|', array($this->uid, time(), $message)));
 
         return 0;
     }
@@ -97,7 +99,7 @@ class Server {
 
         $time = time() + $seconds;
         $key = "room_mute:$this->meet_id:$to_uid";
-        Yii::app()->redis->getClient()->setex($key, $seconds, $time);
+        Yii::$app->redis->setex($key, $seconds, $time);
 
         self::noticeOthers('mute', $this->meet_id, array('from_uid'=>$this->uid, 'conn_id'=>$this->conn_id, 'to_uid'=>$to_uid, 'status'=>0));
 
@@ -121,16 +123,16 @@ class Server {
                 $admin->meet_id = $this->meet_id;
                 $admin->type = 3;
                 $admin->save();
-                Yii::app()->redis->getClient()->set("room_limit:$this->meet_id:$to_uid", 3);
+                Yii::$app->redis->set("room_limit:$this->meet_id:$to_uid", 3);
             }
         }else{
             CRoomLimits::model()->deleteAllByAttributes($param);
-            $i = Yii::app()->redis->getClient()->get("room_limit:$this->meet_id:$to_uid");
+            $i = Yii::$app->redis->get("room_limit:$this->meet_id:$to_uid");
             if ($i && $i == 3) {
-                Yii::app()->redis->getClient()->del("room_limit:$this->meet_id:$to_uid");
+                Yii::$app->redis->del("room_limit:$this->meet_id:$to_uid");
             }
         }
-        $conns = Yii::app()->redis->getClient()->sMembers("room_user_conn:$this->meet_id:$to_uid");
+        $conns = Yii::$app->redis->smembers("room_user_conn:$this->meet_id:$to_uid");
         if ($conns) {
             $from_info = Room::getUserInfo($this->meet_id, $this->uid, $this->conn_id);
             $to_info = Room::getUserInfo($this->meet_id, $to_uid, 0);

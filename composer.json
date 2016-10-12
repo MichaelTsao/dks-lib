@@ -1,10 +1,10 @@
 {
-	"name": "mycompany/myext",
-	"description": "test",
-	"keywords": ["yii2", "test"],
-	"homepage": "https://github.com/cebe/markdown#readme",
-	"type": "test library",
-	"license": "test-1",
+	"name": "mycompany/common",
+	"description": "common",
+	"keywords": ["yii2", "common"],
+	"homepage": "http://git.hangjiashuo.com.cn:8686/dakashuo/lib-common.git",
+	"type": "common library",
+	"license": "common-1",
 	"authors": [
 		{
 			"name": "Jinlin Wang",
@@ -23,7 +23,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"mycompany\\myext\\": ""
+			"mycompany\\common\\": ""
 		}
 	}
 }

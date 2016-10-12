@@ -1,10 +1,12 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
 use yii\console;
 use yii\web\Application;
 use yii\base\Exception;
+use yii\redis\Cache;
+use yii\redis\Connection;
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -78,15 +80,15 @@ class Logic
 
     static public function setSMSCode($phone, $code, $uid = 0)
     {
-        Yii::app()->redis->getClient()->setex('phone_confirm:' . $uid . ':' . $phone, 3600, $code);
+        Yii::$app->redis->setex('phone_confirm:' . $uid . ':' . $phone, 3600, $code);
     }
 
     static public function getSMSCode($phone, $uid = 0, $del = 0)
     {
         $key = 'phone_confirm:' . $uid . ':' . $phone;
-        $code = Yii::app()->redis->getClient()->get($key);
+        $code = Yii::$app->redis->get($key);
         if ($del) {
-            Yii::app()->redis->getClient()->del($key);
+            Yii::$app->redis->del($key);
         }
         return $code;
     }
@@ -94,7 +96,7 @@ class Logic
     static public function strBanned($str, $replace = false)
     {
         $str = trim($str);
-        $word_banned = Yii::app()->redis->getClient()->hGet('common_data', 'word_banned');
+        $word_banned = Yii::$app->redis->hget('common_data', 'word_banned');
         $banned = explode("|", $word_banned);
         $word = array();
         foreach ($banned as $k => $v) {
@@ -221,7 +223,7 @@ class Logic
             if ($r) {
                 $result = json_decode($r, true);
                 $token = $result['access_token'];
-                Yii::app()->redis->getClient()->setex('weixin_token', 3600, $token);
+                Yii::$app->redis->setex('weixin_token', 3600, $token);
             } else {
                 return '';
             }
@@ -466,7 +468,7 @@ class Logic
             }
         }
         if ($path) {
-            return Yii::app()->params['img_host'] . $path;
+            return Yii::$app->params['img_host'] . $path;
         } else {
             return '';
         }

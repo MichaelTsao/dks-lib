@@ -1,15 +1,19 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
 use yii\web\Application;
 use yii\console;
 use yii\db;
-use mycompany\hangjiaapi\models;
+use yii\redis\Cache;
+use yii\redis\Connection;
+
+use mycompany\business;
+
 /**
  * Created by PhpStorm.
- * User: caoxiang
- * Date: 15/8/16
+ * User: jinlin wang
+ * Date: 2016/9/16
  * Time: 上午11:49
  */
 class Expert
@@ -17,31 +21,43 @@ class Expert
     static public function info($expert_id, $with_user = true)
     {
         $key = 'expert:' . $expert_id;
-        $info = Yii::app()->redis->getClient()->hGetAll($key);
+        $info = Yii::$app->redis->hgetall($key);
         if (!$info || count($info) != 28) {
             if (strlen(strval($expert_id)) == 10) {
-                $info = ExpertDB::model()->findByAttributes(['show_id' => $expert_id]);
+                $info = business\ExpertDB::find()
+                    ->where(['show_id' => $expert_id])
+                    ->asArray()
+                    ->one();
             } else {
-                $info = ExpertDB::model()->findByPk($expert_id);
+                $info = business\ExpertDB::find()
+                    ->where(['expert_id' => $expert_id])
+                    ->asArray()
+                    ->one();
             }
             if (!$info) {
                 throw new ApiException(ApiException::EXPERT_NOT_EXIST);
             }
-            $info = $info->attributes;
             $info['real_price'] = $info['price'];
             $info['price'] = $info['price'] * $info['meet_hour'];
-            if (Yii::app()->params['price_type'] == 1) {
-                $info['price'] = $info['price'] * (1 + Yii::app()->params['fee_rate']);
+            if (Yii::$app->params['price_type'] == 1) {
+                $info['price'] = $info['price'] * (1 + Yii::$app->params['fee_rate']);
             }
             if ($info['meet_hour'] == intval($info['meet_hour'])) {
                 $info['meet_hour'] = intval($info['meet_hour']);
             }
-//            $info['location'] = Expert::getLocation($info['location'], $info['resident']);
             $info['field'] = '';
             $info['cover'] = Logic::imagePath($info['cover'], 'cover');
-            $info['meet_people'] = MeetDB::model()->countByAttributes(array('expert_id' => $expert_id, 'type' => 1), array('condition' => 'status in (7,8)'));
-            $info['want_people'] = UserFav::model()->countByAttributes(array('expert_id' => $expert_id));
-            Yii::app()->redis->getClient()->hMSet($key, $info);
+
+            $info['meet_people'] = business\MeetDB::find()
+                //->where(['expert_id' => $expert_id, 'type' => 1])
+                //->where('in','status',[7,8])
+                ->where('expert_id='.$expert_id.' AND type=1 AND status IN (7,8)')
+                ->count();
+
+            $info['want_people'] = business\UserFav::find()
+                ->where(['expert_id' => $expert_id])
+                ->count();
+            Yii::$app->redis->hmset($key, $info);
         }
         $info['locations'] = self::getLocations($info['expert_id']);
         $info['location'] = implode('，', $info['locations']);
@@ -50,14 +66,14 @@ class Expert
                 from expert_field e, field f
                 where expert_id=$expert_id and e.field_id=f.id
                 order by e.sort";
-        $fields = Yii::app()->db->createCommand($sql)->queryColumn();
+        $fields = Yii::$app->db->createCommand($sql)->queryColumn();
         $brief = implode('，', $fields);
         $info['brief'] = $brief;
 
         $sql = "select id, lesson_name, lesson_price, lesson_hour, lesson_desc
                 from expert_lesson
                 where expert_id=$expert_id and lesson_status=1";
-        $lessons = Yii::app()->db->createCommand($sql)->queryAll();
+        $lessons = Yii::$app->db->createCommand($sql)->queryAll();
         $info['lesson'] = $lessons;
 
         if ($with_user) {
@@ -65,11 +81,10 @@ class Expert
             $info['icon'] = $user_info['icon'];
             $info['name'] = $user_info['realname'];
             $info['gender'] = $user_info['gender'];
-            //$info['full_intro'] = $user_info['intro'];
         }
 
-        $info['meet_people'] += Yii::app()->redis->getClient()->get('expert_fake_meet:' . $expert_id);
-        $info['want_people'] += Yii::app()->redis->getClient()->get('expert_fake_fav:' . $expert_id);
+        $info['meet_people'] += Yii::$app->redis->get('expert_fake_meet:' . $expert_id);
+        $info['want_people'] += Yii::$app->redis->get('expert_fake_fav:' . $expert_id);
         $info = Logic::formatDict($info, array(
             'int' => array('expert_id', 'uid', 'work_years', 'rate', 'status', 'meet_people',
                 'want_people', 'access_status', 'hours'),
@@ -77,13 +92,13 @@ class Expert
             'float' => array('hours', 'price'),
         ));
 
-        if ($labels = Yii::app()->redis->getClient()->zRange('expert_label:' . $expert_id, 0, -1)) {
+        if ($labels = Yii::$app->redis->zrange('expert_label:' . $expert_id, 0, -1)) {
             $info['labels_id'] = $labels;
             $label_name = array();
             $label_all = array();
             foreach ($labels as $l) {
                 $sql = "select name, remark from adept_label where id=$l";
-                $label_info = Yii::app()->db->createCommand($sql)->queryRow();
+                $label_info = Yii::$app->db->createCommand($sql)->queryOne();
                 $label_name[] = $label_info['name'];
                 $label_all[] = $label_info;
             }
@@ -95,10 +110,10 @@ class Expert
             $info['labels_info'] = array();
         }
 
+
         $topic = self::topic($expert_id);
         if (!$topic) {
-//            throw new ApiException(ApiException::EXPERT_NO_TOPIC);
-            $info['topic'] = array();
+            $info['topic'] = [];
         } else {
             $info['topic'] = $topic;
         }
@@ -113,7 +128,7 @@ class Expert
         $info['comment'] = $comment;
         $info['comment_count'] = $count;
 
-        $meet_want = Yii::app()->redis->getClient()->sMembers('expert_meet_label:' . $expert_id);
+        $meet_want = Yii::$app->redis->smembers('expert_meet_label:' . $expert_id);
         if (!$meet_want) {
             $meet_want = array();
         }
@@ -121,8 +136,8 @@ class Expert
 
         if (Yii::app()->request->getParam('platform') == 5) {
             $sql = "select name from expert_label where expert_id=$expert_id";
-            $labels = Yii::app()->db->createCommand($sql)->queryAll();
-            $l = array();
+            $labels = Yii::$app->db->createCommand($sql)->queryAll();
+            $l = [];
             foreach ($labels as $label) {
                 $l[] = $label['name'];
             }
@@ -141,7 +156,7 @@ class Expert
     static public function topic($expert_id, $n = 0)
     {
         $key = 'expert_topic:' . $expert_id;
-        $info = Yii::app()->redis->getClient()->zRevRange($key, 0, $n - 1);
+        $info = Yii::$app->redis->zrevrange($key, 0, $n - 1);
         if (!$info) {
             return false;
         }
@@ -158,9 +173,9 @@ class Expert
     static public function topicInfo($topic_id)
     {
         $key = 'topic:' . $topic_id;
-        $topic = Yii::app()->redis->getClient()->hGetAll($key);
+        $topic = Yii::$app->redis->hgetall($key);
         if (!$topic) {
-            $data = TopicDB::model()->findByPk($topic_id);
+            $data = business\TopicDB::findOne($topic_id);
             if ($data) {
                 $topic = array();
                 $topic['topic_id'] = $topic_id;
@@ -169,7 +184,7 @@ class Expert
                 $topic['full_intro'] = $data->full_intro;
                 $topic['expert_id'] = $data->expert_id;
                 $topic['status'] = $data->status;
-                Yii::app()->redis->getClient()->hMSet($key, $topic);
+                Yii::$app->redis->hmset($key, $topic);
             } else {
 //                throw new ApiException(ApiException::TOPIC_NOT_EXIST);
                 return false;
@@ -196,7 +211,7 @@ class Expert
         $sql = "select l.name from expert_location el, location l 
                 where el.expert_id=$expert_id and el.location_id=l.id
                 order by el.sort";
-        return Yii::app()->db->createCommand($sql)->queryColumn();
+        return Yii::$app->db->createCommand($sql)->queryColumn();
     }
 
     static public function getField($field_id)
@@ -206,14 +221,14 @@ class Expert
 
     static public function getPoolList($id)
     {
-        $show = Yii::app()->redis->getClient()->get('position_show:' . $id);
-        $r = Yii::app()->redis->getClient()->zRevRange('position_top:' . $id, 0, -1);
+        $show = Yii::$app->redis->get('position_show:' . $id);
+        $r = Yii::$app->redis->zrevrange('position_top:' . $id, 0, -1);
         if (!$r) {
             $r = array();
         }
         $last = $show - count($r);
         if ($last > 0) {
-            $list = Yii::app()->redis->getClient()->zRevRange('position:' . $id, 0, -1);
+            $list = Yii::$app->redis->zrevrange('position:' . $id, 0, -1);
             if ($list) {
                 $lc = count($list);
                 if ($last > $lc) {
@@ -240,7 +255,7 @@ class Expert
             throw new ApiException(ApiException::WRONG_PARAM);
         }
         ExpertDB::model()->updateByPk($expert_id, array($type => $info));
-        Yii::app()->redis->getClient()->hSet('expert:' . $expert_id, $type, $info);
+        Yii::$app->redis->hset('expert:' . $expert_id, $type, $info);
     }
 
     public static function getScoreList($tags)
@@ -253,7 +268,7 @@ class Expert
         $expert_score_sum = array();
         $expert_score_count = array();
         foreach ($tags as $tag) {
-            $data = Yii::app()->redis->getClient()->zRange('label_expert:' . $tag, 0, -1, true);
+            $data = Yii::$app->redis->zrange('label_expert:' . $tag, 0, -1, true);
             foreach ($data as $expert_id => $score) {
                 if (isset($expert_score_sum[$expert_id])) {
                     $expert_score_sum[$expert_id] += $score * $score_adjust;
@@ -291,8 +306,9 @@ class Expert
 
     public static function change($expert)
     {
-        if ( version_compare(Yii::app()->request->getParam('ver'), '2.2') >= 0
-            || Yii::app()->request->getParam('platform') != 2) {
+        //getParam
+        if ( version_compare(Yii::$app->request->post('ver'), '2.2') >= 0
+            || Yii::$app->request->post('platform') != 2) {
             $expert['expert_id'] = $expert['show_id'];
         }
         unset($expert['show_id']);

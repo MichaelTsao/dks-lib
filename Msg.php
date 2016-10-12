@@ -1,5 +1,5 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
 //use yii\db\ActiveQuery;
@@ -8,7 +8,7 @@ use Yii;
 //use yii\data\ActiveDataProvider;//活动记录
 use yii\base\Object;
 use yii\base\Component;
-use mycompany\hangjiaapi\models;
+use mycompany\business;
 /**
  * Created by PhpStorm.
  * User: caoxiang

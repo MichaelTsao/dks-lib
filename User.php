@@ -1,7 +1,10 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
+use yii\redis\Cache;
+use yii\redis\Connection;
+use mycompany\business;
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -15,7 +18,7 @@ class User
             throw new ApiException(ApiException::TOKEN_FAIL);
         }
         $key = 'token:'.$token;
-        $value = Yii::app()->redis->getClient()->get($key);
+        $value = Yii::$app->redis->get($key);
         if (!$value) {
             $info = UserToken::model()->findByAttributes(array('token'=>$token));
             if ($info) {
@@ -23,7 +26,7 @@ class User
                 $last_time = $ctime + 86400 * 30 - time();
                 if ($last_time > 0) {
                     $value = $ctime.'|'.$info->uid;
-                    Yii::app()->redis->getClient()->setex($key, $last_time, $value);
+                    Yii::$app->redis->setex($key, $last_time, $value);
                 }
             }
         }
@@ -42,7 +45,8 @@ class User
     }
 
     static public function login($phone, $password, $device_id='', $platform=0){
-        $user = UserDB::model()->findByAttributes(array('phone'=>$phone, 'password'=>md5($password)));
+        $user = business\UserDB::findOne(['phone'=>$phone, 'password'=>md5($password)]);
+        //$user = UserDB::model()->findByAttributes(array('phone'=>$phone, 'password'=>md5($password)));
         if (!$user) {
             throw new ApiException(ApiException::LOGIN_FAIL);
         }
@@ -50,35 +54,38 @@ class User
             throw new ApiException(ApiException::USER_CLOSED);
         }
         $token = self::makeToken($user->uid);
-        $token_info = new UserToken();
+        $token_info = new business\UserToken();
         $token_info->uid = $user->uid;
         $token_info->token = $token;
         $token_info->save();
 
         $user->login_time = date('Y-m-d H:i:s');
         $user->save();
-        
-        Yii::app()->db->createCommand("insert into login_log(uid, platform) VALUES ($user->uid, $platform)")->execute();
 
-        DeviceUser::create($user->uid, $device_id, $platform);
+        Yii::$app->db->createCommand()->insert('login_log', [
+            'uid' => $user->uid,
+            'platform' => $platform,
+        ])->execute();
 
-        $info = User::info($user->uid);
-        $r = array(
+        business\DeviceUser::create($user->uid, $device_id, $platform);
+
+        $info = self::info($user->uid);
+        $r = [
             'uid'=>intval($user->uid),
-            'token'=>strval($token),
-        );
+            'token'=>strval($token)
+        ];
         return $r+$info;
     }
 
     static public function info($uid, $is_expert=false){
         if ($is_expert) {
-            $e = ExpertDB::model()->findByAttributes(array('expert_id'=>$uid));
+            $e = business\ExpertDB::findOne(['expert_id'=>$uid]);
             $uid = $e->uid;
         }
         $key = 'user:'.$uid;
-        $info = Yii::app()->redis->getClient()->hGetAll($key);
+        $info = Yii::$app->redis->hgetall($key);
         if (!$info || count($info) != 10) {
-            $data = UserDB::model()->findByPk($uid);
+            $data = business\UserDB::findOne($uid)->toArray();
             if ($data) {
                 $info = array();
                 $info['uid'] = intval($data['uid']);
@@ -90,7 +97,7 @@ class User
                 $info['title'] = strval($data['title']);
                 $info['company'] = strval($data['company']);
 
-                $expert = ExpertDB::model()->findByAttributes(array('uid'=>$uid));
+                $expert = business\ExpertDB::findOne(['uid'=>$uid]);
                 if ($expert) {
                     $info['expert'] = intval($expert->expert_id);
                     $info['access'] = intval($expert->access_status);
@@ -101,7 +108,7 @@ class User
             }else{
                 throw new ApiException(ApiException::USER_NOT_EXIST);
             }
-            Yii::app()->redis->getClient()->hMSet($key, $info);
+            Yii::$app->redis->hmset($key, $info);
         }
         $info['uid'] = intval($info['uid']);
         $info['gender'] = intval($info['gender']);
@@ -133,14 +140,14 @@ class User
         $img_url = Yii::app()->params['img_host'].$file;
         User::setCache($uid, 'icon', $img_url);
         if ($info['expert']) {
-            Yii::app()->redis->getClient()->hSet('expert:'.$info['expert'], 'icon', $img_url);
+            Yii::$app->redis->hset('expert:'.$info['expert'], 'icon', $img_url);
         }
         UserDB::model()->updateByPk($uid, array('icon'=>$file));
         return 0;
     }
 
     static public function setCache($uid, $key, $value){
-        return Yii::app()->redis->getClient()->hSet('user:'.$uid, $key, $value);
+        return Yii::$app->redis->hset('user:'.$uid, $key, $value);
     }
 
     static public function update($uid, $type, $info){
@@ -204,11 +211,11 @@ class User
         if ($type == 'access' || $type == 'period_access' || $type == 'lesson_access' || $type == 'ask_access') {
             $expert_id = User::expertID($uid);
             ExpertDB::model()->updateByPk($expert_id, array($key=>$info));
-            Yii::app()->redis->getClient()->hSet('expert:'.$expert_id, $key, $info);
-            $type == 'access' && Yii::app()->redis->getClient()->hSet('user:'.$uid, 'access', $info);
+            Yii::$app->redis->hset('expert:'.$expert_id, $key, $info);
+            $type == 'access' && Yii::$app->redis->hset('user:'.$uid, 'access', $info);
         }else{
             UserDB::model()->updateByPk($uid, array($key=>$info));
-            Yii::app()->redis->getClient()->hSet('user:'.$uid, $key, $info);
+            Yii::$app->redis->hset('user:'.$uid, $key, $info);
         }
     }
 }

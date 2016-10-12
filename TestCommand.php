@@ -1,11 +1,13 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
 use yii\base\Object;
 use yii\base\Component;
 use yii\console\Controller;
-use mycompany\hangjiaapi\models;
+use yii\redis\Cache;
+use yii\redis\Connection;
+use mycompany\business;
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -40,7 +42,7 @@ class TestCommand extends Controller
         }
 
         $now = date('Y-m-d H:i:s');
-        Yii::app()->redis->getClient()->hMSet('meet:' . $meet_id, array(
+        Yii::$app->redis->hmset('meet:' . $meet_id, array(
             'status' => $status,
             'confirm_time' => $now,
         ));
@@ -117,7 +119,7 @@ class TestCommand extends Controller
 //            'status' => Meet::CHAT,
 //            'chat_time' => $now,
 //        );
-//        Yii::app()->redis->getClient()->hMSet('meet:'.$meet_id, $data);
+//        Yii::$app->redis->hmset('meet:'.$meet_id, $data);
 //        MeetDB::model()->updateByPk($meet_id, $data);
 //        $meet = Meet::info($meet_id);
 //
@@ -129,15 +131,15 @@ class TestCommand extends Controller
     {
         $meet = Meet::info($meet_id);
         $now = date('Y-m-d H:i:s');
-        Yii::app()->redis->getClient()->hMSet('meet:' . $meet_id, array(
+        Yii::$app->redis->hmset('meet:' . $meet_id, array(
             'status' => Meet::MEET,
             'meet_time' => $now,
         ));
-        Yii::app()->redis->getClient()->hIncrBy('expert:' . $meet['expert_id'], 'meet_people', 1);
+        Yii::$app->redis->hincrby('expert:' . $meet['expert_id'], 'meet_people', 1);
         $hours = $meet['minutes'] / 60;
-        $new_hours = Yii::app()->redis->getClient()->hIncrByFloat('expert:' . $meet['expert_id'], 'hours', $hours);
-        Yii::app()->redis->getClient()->zIncrBy('expert_longtime', $hours, $meet['expert_id']);
-        Yii::app()->redis->getClient()->zIncrBy('expert_active', 1, $meet['expert_id']);
+        $new_hours = Yii::$app->redis->hincrbyfloat('expert:' . $meet['expert_id'], 'hours', $hours);
+        Yii::$app->redis->zincrby('expert_longtime', $hours, $meet['expert_id']);
+        Yii::$app->redis->zincrby('expert_active', 1, $meet['expert_id']);
         MeetDB::model()->updateByPk($meet_id, array('status' => Meet::MEET, 'meet_time' => $now));
         ExpertDB::model()->updateByPk($meet['expert_id'], array('hours' => $new_hours));
         $msg = new Msg($meet_id, 'after_confirm');
@@ -168,7 +170,7 @@ class TestCommand extends Controller
             'comment_time' => null,
         );
         MeetDB::model()->updateByPk($meet_id, $data);
-        //Yii::app()->redis->getClient()->hMSet('meet:'.$meet_id, $data);
+        //Yii::$app->redis->hmset('meet:'.$meet_id, $data);
         //Meet::doneToRun($meet_id, 'user', $info['uid']);
     }
 
@@ -188,7 +190,7 @@ class TestCommand extends Controller
 
     public function actionDelKeys($key)
     {
-        Yii::app()->redis->getClient()->eval("return redis.call('del', unpack(redis.call('keys', 'hj.$key:*')))");
+        Yii::$app->redis->eval("return redis.call('del', unpack(redis.call('keys', 'hj.$key:*')))");
     }
 
     public function actionTest($id)

@@ -1,11 +1,13 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
 use yii\web\Application;
 use yii\console;
 use yii\db;
-use mycompany\hangjiaapi\models;
+use yii\redis\Cache;
+use yii\redis\Connection;
+use mycompany\business;
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -37,11 +39,11 @@ class Meet
     static public function info($meet_id)
     {
         $key = "meet:" . $meet_id;
-        $info = Yii::app()->redis->getClient()->hGetAll($key);
+        $info = Yii::$app->redis->hgetall($key);
         if (!$info || count($info) != 38) {
-            $data = MeetDB::model()->findByPk($meet_id);
+            $data = business\MeetDB::model()->findOne($meet_id)->toArray();
             if ($data) {
-                $info = $data->attributes;
+                $info = $data;
                 if ($info['meet_type'] == Meet::TYPE_SINGLE) {
                     $h = $info['minutes'] / 60;
                     if ($h == 0.5) {
@@ -100,7 +102,7 @@ class Meet
                     $info['fee'] = strval($price * $info['fee_rate']) . "元"; // 公司收的服务费
                 }
                 $info['fee_rate'] = floatval($info['fee_rate']);
-                Yii::app()->redis->getClient()->hMSet($key, $info);
+                Yii::$app->redis->hmset($key, $info);
             } else {
                 throw new ApiException(ApiException::MEET_NOT_EXIST);
             }
@@ -245,7 +247,7 @@ class Meet
         $meet->save();
         Meet::info($meet->meet_id);
 
-        Yii::app()->redis->getClient()->zAdd('user_meet:' . $uid, time(), $meet->meet_id);
+        Yii::$app->redis->zadd('user_meet:' . $uid, time(), $meet->meet_id);
         self::setRun($meet->meet_id, 'user', $uid);
         return $meet->meet_id;
     }
@@ -259,8 +261,8 @@ class Meet
         } else {
             $key = 'expert_comment_image:' . $expert_id;
         }
-        $comment = Yii::app()->redis->getClient()->zRevRange($key, $start, $end);
-        $all = Yii::app()->redis->getClient()->zCount($key, '-inf', '+inf');
+        $comment = Yii::$app->redis->zrevrange($key, $start, $end);
+        $all = Yii::$app->redis->zcount($key, '-inf', '+inf');
 
         $result = array();
         foreach ($comment as $key => $c) {
@@ -288,7 +290,7 @@ class Meet
 
                 $comment_one['image'] = array();
                 $sql = "select image from meet_comment_img where meet_id=$c and status=1 ORDER BY sort";
-                $data = Yii::app()->db->createCommand($sql)->queryAll();
+                $data = Yii::$app->db->createCommand($sql)->queryAll();
                 foreach ($data as $item) {
                     $comment_one['image'][] = Logic::imagePath($item['image'], 'comment');
                 }
@@ -316,25 +318,25 @@ class Meet
             }
 
             $result[$key] = Logic::formatDict($comment_one, array(
-                'int' => array('uid', 'rate', 'topic_id'),
-                'str' => array('comment', 'comment_time', 'topic_name', 'username', 'icon', 'topic'),
+                'int' => ['uid', 'rate', 'topic_id'],
+                'str' => ['comment', 'comment_time', 'topic_name', 'username', 'icon', 'topic'],
             ));
         }
-        return array($result, $all);
+        return [$result, $all];
     }
 
     static public function commentWithImg($expert_id)
     {
         $key = 'expert_comment:' . $expert_id;
-        $comment = Yii::app()->redis->getClient()->zRevRange($key, 0, -1);
-        $all = Yii::app()->redis->getClient()->zCount($key, '-inf', '+inf');
+        $comment = Yii::$app->redis->zrevrange($key, 0, -1);
+        $all = Yii::$app->redis->zcount($key, '-inf', '+inf');
 
         $result = array();
         foreach ($comment as $key => $c) {
             $comment_one = [];
             if (intval($c) > 0) {
                 $sql = "select image from meet_comment_img where meet_id=$c and status=1 ORDER BY sort";
-                $data = Yii::app()->db->createCommand($sql)->queryAll();
+                $data = Yii::$app->db->createCommand($sql)->queryAll();
                 foreach ($data as $item) {
                     $comment_one['image'][] = Logic::imagePath($item['image'], 'comment');
                 }
@@ -380,7 +382,7 @@ class Meet
             $meet->pay_time = $now;
             $meet->chat_time = $now;
             if ($meet->save()) {
-                Yii::app()->redis->getClient()->hMSet('meet:' . $meet_id, array(
+                Yii::$app->redis->hmset('meet:' . $meet_id, array(
                     'status' => Meet::USER_PAY,
                     'pay_time' => $now,
                     'chat_time' => $now,
@@ -392,8 +394,8 @@ class Meet
                 Meet::setRun($meet_id, 'user', $meet['uid'], 1);
                 Meet::setRun($meet_id, 'expert', $meet['expert_id'], 1);
 
-//                Yii::app()->redis->getClient()->zAdd('user_chat:'.$meet->uid, time(), $meet_id);
-//                Yii::app()->redis->getClient()->zAdd('user_chat:'.$expert['uid'], time(), $meet_id);
+//                Yii::$app->redis->zadd('user_chat:'.$meet->uid, time(), $meet_id);
+//                Yii::$app->redis->zadd('user_chat:'.$expert['uid'], time(), $meet_id);
                 return true;
             } else {
                 return false;
@@ -434,8 +436,8 @@ class Meet
             return;
         }
 
-        Yii::app()->redis->getClient()->zDelete($type . '_meet:new:' . $id, $meet_id);
-        Yii::app()->redis->getClient()->zAdd($type . '_meet:run:' . $id, time(), $meet_id);
+        Yii::$app->redis->zdelete($type . '_meet:new:' . $id, $meet_id);
+        Yii::$app->redis->zadd($type . '_meet:run:' . $id, time(), $meet_id);
     }
 
     static public function newToDone($meet_id, $type, $id)
@@ -445,9 +447,9 @@ class Meet
             return;
         }
 
-        Yii::app()->redis->getClient()->zDelete($type . '_meet:new:' . $id, $meet_id);
-        Yii::app()->redis->getClient()->zDelete($type . '_meet:new+run:' . $id, $meet_id);
-        Yii::app()->redis->getClient()->zAdd($type . '_meet:done:' . $id, time(), $meet_id);
+        Yii::$app->redis->zdelete($type . '_meet:new:' . $id, $meet_id);
+        Yii::$app->redis->zdelete($type . '_meet:new+run:' . $id, $meet_id);
+        Yii::$app->redis->zadd($type . '_meet:done:' . $id, time(), $meet_id);
     }
 
     static public function runToDone($meet_id, $type, $id)
@@ -457,9 +459,9 @@ class Meet
             return;
         }
 
-        Yii::app()->redis->getClient()->zDelete($type . '_meet:run:' . $id, $meet_id);
-        Yii::app()->redis->getClient()->zDelete($type . '_meet:new+run:' . $id, $meet_id);
-        Yii::app()->redis->getClient()->zAdd($type . '_meet:done:' . $id, time(), $meet_id);
+        Yii::$app->redis->zdelete($type . '_meet:run:' . $id, $meet_id);
+        Yii::$app->redis->zdelete($type . '_meet:new+run:' . $id, $meet_id);
+        Yii::$app->redis->zadd($type . '_meet:done:' . $id, time(), $meet_id);
     }
 
     static public function doneToRun($meet_id, $type, $id)
@@ -469,9 +471,9 @@ class Meet
             return;
         }
 
-        Yii::app()->redis->getClient()->zDelete($type . '_meet:done:' . $id, $meet_id);
-        Yii::app()->redis->getClient()->zAdd($type . '_meet:run:' . $id, time(), $meet_id);
-        //Yii::app()->redis->getClient()->zAdd($type.'_meet:new+run:'.$id, time(), $meet_id);
+        Yii::$app->redis->zdelete($type . '_meet:done:' . $id, $meet_id);
+        Yii::$app->redis->zadd($type . '_meet:run:' . $id, time(), $meet_id);
+        //Yii::$app->redis->zadd($type.'_meet:new+run:'.$id, time(), $meet_id);
     }
 
     static public function setRun($meet_id, $type, $id, $remind = 0)
@@ -490,7 +492,7 @@ class Meet
         if ($remind) {
             $time *= 2;
         }
-        Yii::app()->redis->getClient()->zAdd($type . "_meet:$k:" . $id, $time, $meet_id);
+        Yii::$app->redis->zadd($type . "_meet:$k:" . $id, $time, $meet_id);
     }
 
     static public function getUnread($uid)
@@ -577,7 +579,7 @@ class Meet
     // TODO: maybe better way
     static public function checkMeetValid($uid, $expert_id)
     {
-        $list = Yii::app()->redis->getClient()->zRange('user_meet:' . $uid, 0, -1);
+        $list = Yii::$app->redis->zrange('user_meet:' . $uid, 0, -1);
         foreach ($list as $meet_id) {
             $info = Meet::info($meet_id);
             $status = array(Meet::EXPERT_REFUSE, Meet::EXPERT_TIMEOUT, Meet::USER_PAY_TIMEOUT, Meet::COMMENT,
@@ -591,12 +593,12 @@ class Meet
 
     static public function checkPeriodValid($expert_id)
     {
-//        if (Yii::app()->redis->getClient()->get('expert_period:' . $expert_id . ':' . date('Ym'))) {
+//        if (Yii::$app->redis->get('expert_period:' . $expert_id . ':' . date('Ym'))) {
 //            return false;
 //        }
         return true;
 
-//        $list = Yii::app()->redis->getClient()->zRange('expert_meet:'.$expert_id, 0, -1);
+//        $list = Yii::$app->redis->zrange('expert_meet:'.$expert_id, 0, -1);
 //        foreach ($list as $meet_id) {
 //            $info = Meet::info($meet_id);
 //            $status = array(Meet::EXPERT_REFUSE, Meet::EXPERT_TIMEOUT, Meet::USER_PAY_TIMEOUT, Meet::COMMENT,
@@ -655,7 +657,7 @@ class Meet
         if ($meet['user_price'] == 0 && $choose == 1) {
             $param['pay_time'] = $now;
         }
-        Yii::app()->redis->getClient()->hMSet('meet:' . $meet_id, $param);
+        Yii::$app->redis->hmset('meet:' . $meet_id, $param);
 
         MeetDB::model()->updateByPk($meet_id, $param);
         if ($choose == 1) {

@@ -1,11 +1,11 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
 use yii\base\Object;
 use yii\base\Component;
 use yii\console\Controller;
-use mycompany\hangjiaapi\models;
+use mycompany\business;
 /**
  * Created by PhpStorm.
  * User: caoxiang

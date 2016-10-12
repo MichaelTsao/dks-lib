@@ -1,5 +1,5 @@
 <?php
-namespace mycompany\hangjiaapi\common;
+namespace mycompany\common;
 
 use Yii;
 use yii\console;
@@ -27,7 +27,7 @@ class ApiException extends Exception
     const USER_NOT_EXIST = 10;
     const USER_CLOSED = 11;
 
-    protected $msgs = array(
+    protected $msgs = [
         self::OK => 'ok',
         self::TOKEN_FAIL => '请先登录',
         self::EXPERT_NOT_EXIST => '大咖不存在',
@@ -40,7 +40,7 @@ class ApiException extends Exception
         self::USER_NOT_EXPERT => '您不是大咖',
         self::USER_NOT_EXIST => '用户不存在',
         self::USER_CLOSED => '您的帐号已被冻结,您可以与我们的客服联系，了解冻结原因及申请解除冻结',
-    );
+    ];
 
     public $data = null;
     public $pager = null;
