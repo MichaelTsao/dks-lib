@@ -12,7 +12,7 @@ use Yii;
 
 class Getparms
 {
-    public static function Getparms($name = null, $defaultValue = null){
+    public static function Getparm($name = null, $defaultValue = null){
         $request = Yii::$app->request;
         if ($request->isGet){
             return $request->get($name, $defaultValue);

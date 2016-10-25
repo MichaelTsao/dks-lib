@@ -1,6 +1,7 @@
 <?php
 namespace mycompany\common;
 
+use mycompany\hangjiaapi\models\UserDB;
 use Yii;
 use yii\redis\Cache;
 use yii\redis\Connection;
@@ -13,6 +14,13 @@ use mycompany\business;
  */
 class User
 {
+    const LOGIN_TYPE_WEIXIN = 1;
+    const LOGIN_TYPE_FENGYUN = 2;
+    public static $loginTypes = [
+        self::LOGIN_TYPE_WEIXIN,
+        self::LOGIN_TYPE_FENGYUN,
+    ];
+
     static public function auth($token){
         if (!$token) {
             throw new ApiException(ApiException::TOKEN_FAIL);
@@ -20,7 +28,7 @@ class User
         $key = 'token:'.$token;
         $value = Yii::$app->redis->get($key);
         if (!$value) {
-            $info = UserToken::model()->findByAttributes(array('token'=>$token));
+            $info = business\UserToken::findOne(['token'=>$token]);
             if ($info) {
                 $ctime = strtotime($info->ctime);
                 $last_time = $ctime + 86400 * 30 - time();
@@ -87,7 +95,7 @@ class User
         if (!$info || count($info) != 10) {
             $data = business\UserDB::findOne($uid)->toArray();
             if ($data) {
-                $info = array();
+                $info = [];
                 $info['uid'] = intval($data['uid']);
                 $info['icon'] = Logic::imagePath($data['icon'], 'icon');
                 $info['realname'] = strval($data['realname']);
@@ -108,7 +116,7 @@ class User
             }else{
                 throw new ApiException(ApiException::USER_NOT_EXIST);
             }
-            Yii::$app->redis->hmset($key, $info);
+            RedisCommon::setHash_Array($key, $info);
         }
         $info['uid'] = intval($info['uid']);
         $info['gender'] = intval($info['gender']);
@@ -118,7 +126,7 @@ class User
             $expert_info = Expert::info($info['expert'], false);
             $info['expert_info'] = Expert::change($expert_info);
         }else{
-            $info['expert_info'] = array();
+            $info['expert_info'] = [];
         }
         return $info;
     }
@@ -137,12 +145,12 @@ class User
             return 1;
         }
         $file = '/images/icon/'.$file;
-        $img_url = Yii::app()->params['img_host'].$file;
+        $img_url = Yii::$app->params['img_host'].$file;
         User::setCache($uid, 'icon', $img_url);
         if ($info['expert']) {
             Yii::$app->redis->hset('expert:'.$info['expert'], 'icon', $img_url);
         }
-        UserDB::model()->updateByPk($uid, array('icon'=>$file));
+        Yii::$app->db->createCommand()->update('user',['icon'=>$file], 'uid='.$uid)->execute();
         return 0;
     }
 
@@ -200,22 +208,46 @@ class User
             }
         }
         if (($type != 'access' && $type != 'period_access' && $type != 'lesson_access' && $type != 'ask_access' && !$info)
-            || ($type == 'access' && !in_array($info, array(0, 1)))
-            || ($type == 'period_access' && !in_array($info, array(0, 1)))
-            || ($type == 'lesson_access' && !in_array($info, array(0, 1)))
-            || ($type == 'ask_access' && !in_array($info, array(0, 1)))
+            || ($type == 'access' && !in_array($info, [0, 1]))
+            || ($type == 'period_access' && !in_array($info, [0, 1]))
+            || ($type == 'lesson_access' && !in_array($info, [0, 1]))
+            || ($type == 'ask_access' && !in_array($info, [0, 1]))
         ) {
             throw new ApiException($error, $show.'填写错误');
         }
 
         if ($type == 'access' || $type == 'period_access' || $type == 'lesson_access' || $type == 'ask_access') {
             $expert_id = User::expertID($uid);
-            ExpertDB::model()->updateByPk($expert_id, array($key=>$info));
+            Yii::$app->db->createCommand()->update('expert',[$key=>$info], 'expert_id='.$expert_id)->execute();
             Yii::$app->redis->hset('expert:'.$expert_id, $key, $info);
             $type == 'access' && Yii::$app->redis->hset('user:'.$uid, 'access', $info);
         }else{
-            UserDB::model()->updateByPk($uid, array($key=>$info));
+            Yii::$app->db->createCommand()->update('user',[$key=>$info], 'uid='.$uid)->execute();
             Yii::$app->redis->hset('user:'.$uid, $key, $info);
+        }
+    }
+
+    public static function fengyunLogin($token, $expert_id)
+    {
+        $key = '201609090919demo';
+        $security = '201609090919demo';
+
+        $expert = Expert::info($expert_id);
+        $params = [
+            'key' => $key,
+            'security' => $security,
+            'token' => $token,
+            'resourceId' => $expert_id,
+            'resourceName' => $expert['name'],
+        ];
+        $url = 'http://demo.chuangxin360.com:8090/api/userauth/decryptTokenRecord';
+        $r = Logic::request($url, $params);
+        Yii::log('fengyun: ' . $r, 'warning');
+        $result = json_decode($r, true);
+        if (isset($result['code']) && $result['code'] == 200 && isset($result['data'])) {
+            return $result['data'];
+        } else {
+            return false;
         }
     }
 }

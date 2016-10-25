@@ -27,10 +27,10 @@ class Msg extends Component
     private $_role = null;
     private $_weixinData = null;
 
-    private $keys = array('{USER_NAME}', '{EXPERT_NAME}', '{NOW}', '{REASON}', '{DATE}', '{MEET_ID}', '{FROM_ROLE}',
-        '{USER_COMPANY}', '{USER_TITLE}');
+    private $keys = ['{USER_NAME}', '{EXPERT_NAME}', '{NOW}', '{REASON}', '{DATE}', '{MEET_ID}', '{FROM_ROLE}',
+        '{USER_COMPANY}', '{USER_TITLE}'];
 
-    private $full_msg = array(
+    private $full_msg = [
         'after_accept' => "大咖{EXPERT_NAME}在{NOW}接受了您的预约。\n请在15天内登录“大咖说”支付费用，超时未支付该预约将自动取消",
         'after_accept_without_pay' => "大咖{EXPERT_NAME}在{NOW}接受您的预约。\n请及时登录“大咖说”和大咖确认预约事宜",
         'after_refuse' => "大咖{EXPERT_NAME}在{NOW}关闭了您所申请的预约。\n您可以登录“大咖说”重新预约，或者预约其他大咖来获得帮助",
@@ -42,9 +42,9 @@ class Msg extends Component
         'after_create' => '您的预约已提交。大咖会在一周内对本预约进行回应',
         'after_create_ask' => '您的问题已提交。大咖会在一周内对本问题进行回应',
         'after_answer' => '大咖{EXPERT_NAME}回答了您的问题。您可以登录“大咖说”收听',
-    );
+    ];
 
-    private $short_msg = array(
+    private $short_msg = [
         'after_accept' => "大咖{EXPERT_NAME}已接受预约, 请在15天内支付费用",
         'after_accept_without_pay' => "大咖{EXPERT_NAME}已接受预约",
         'after_refuse' => "您对大咖{EXPERT_NAME}的预约已被关闭",
@@ -54,9 +54,9 @@ class Msg extends Component
         'after_expert_chat' => "大咖{EXPERT_NAME}发来联系信息, 请尽快回复",
         'after_confirm' => "大咖{EXPERT_NAME}已确认与您完成了预约。请致谢",
         'after_answer' => '大咖{EXPERT_NAME}回答了您的问题',
-    );
+    ];
 
-    private $kefu_msg = array(
+    private $kefu_msg = [
         'after_create' => '后台有新订单，请尽快审核。订单编号：{MEET_ID}，订单时间：{NOW} ,学员姓名：{USER_NAME}， 预约大咖：{EXPERT_NAME}',
         'after_create_ask' => '后台有新问答订单，请尽快审核。订单编号：{MEET_ID}，订单时间：{NOW} ,学员姓名：{USER_NAME}， 预约大咖：{EXPERT_NAME}',
         'after_cancel' => '订单编号：{MEET_ID} ,学员姓名：{USER_NAME}， 预约大咖：{EXPERT_NAME}, 学员已取消，取消时间：{NOW}',
@@ -66,9 +66,9 @@ class Msg extends Component
         'after_accept' => '订单编号：{MEET_ID} ,学员姓名：{USER_NAME}， 预约大咖：{EXPERT_NAME}, 大咖已接单，接单时间：{NOW}',
         'after_refuse' => '订单编号：{MEET_ID} ,学员姓名：{USER_NAME}， 预约大咖：{EXPERT_NAME}, 大咖已拒绝，拒绝时间：{NOW}',
         'after_refuse_ask' => '订单编号：{MEET_ID} ,学员姓名：{USER_NAME}， 预约大咖：{EXPERT_NAME}, 大咖已拒绝，拒绝时间：{NOW}',
-    );
+    ];
 
-    private $to = array(
+    private $to = [
         'after_accept' => 'user',
         'after_accept_without_pay' => 'user',
         'after_refuse' => 'user',
@@ -80,11 +80,11 @@ class Msg extends Component
         'after_create' => 'user',
         'after_create_ask' => 'user',
         'after_answer' => 'user',
-    );
+    ];
 
-    private $chat_scene = array('after_user_chat', 'after_expert_chat');
+    private $chat_scene = ['after_user_chat', 'after_expert_chat'];
 
-    public function __construct($meet_id, $type, $param = array())
+    public function __construct($meet_id, $type, $param = [])
     {
         $this->meet = Meet::info($meet_id);
         $this->type = strtolower($type);
@@ -258,14 +258,14 @@ class Msg extends Component
     {
         if (is_null($this->_weixinData)) {
             if ($this->msg) {
-                $this->_weixinData = array(
+                $this->_weixinData = [
                     'first' => $this->greet,
                     'content' => $this->msg,
                     'id' => $this->meetId,
                     'status' => $this->status,
-                );
+                ];
             } else {
-                $this->_weixinData = array();
+                $this->_weixinData = [];
             }
         }
         return $this->_weixinData;
@@ -274,15 +274,15 @@ class Msg extends Component
     public function getWeixinUrl()
     {
         if ($this->to[$this->type] == 'user') {
-            return Yii::app()->params['web_host'] . '/meet/' . $this->meet['meet_id'];
+            return Yii::$app->params['web_host'] . '/meet/' . $this->meet['meet_id'];
         } else {
-            return Yii::app()->params['web_host'] . '/meet/expert/' . $this->meet['meet_id'];
+            return Yii::$app->params['web_host'] . '/meet/expert/' . $this->meet['meet_id'];
         }
     }
 
     public function getDeviceId($type)
     {
-        $id = array();
+        $id = [];
 
         if ($this->role == 1) {
             $uid = $this->meet['uid'];
@@ -292,7 +292,10 @@ class Msg extends Component
             return $id;
         }
 
-        $data = DeviceUser::model()->findAllByAttributes(array('uid' => $uid, 'type' => $type));
+        $data = business\DeviceUser::find()
+            ->select(['device_id'])
+            ->where(['uid' => $uid, 'type' => $type])
+            ->all();
         foreach ($data as $item) {
             $id[] = $item->device_id;
         }
@@ -327,8 +330,8 @@ class Msg extends Component
             }
         }
 
-        if ($this->kefuMsg && isset(Yii::app()->params['kefu_phone'])) {
-            Logic::sendSMS(Yii::app()->params['kefu_phone'], str_replace("\n", '', $this->kefuMsg));
+        if ($this->kefuMsg && isset(Yii::$app->params['kefu_phone'])) {
+            Logic::sendSMS(Yii::$app->params['kefu_phone'], str_replace("\n", '', $this->kefuMsg));
         }
     }
 

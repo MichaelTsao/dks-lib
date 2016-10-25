@@ -41,16 +41,16 @@ class Logic
         return true;
     }
 
-    public static function request($url, $param = array(), $header = array(), $ssl = false, $files = [])
+    public static function request($url, $param = [], $header = [], $ssl = false, $files = [])
     {
         $ch = curl_init();
-        $options = array(
+        $options = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CONNECTTIMEOUT => 8,
             CURLOPT_URL => $url,
             CURLOPT_HEADER => false,
             CURLOPT_TIMEOUT => 10,
-        );
+        ];
         if ($param) {
             $options[CURLOPT_POST] = 1;
             if (is_array($param)) {
@@ -98,7 +98,7 @@ class Logic
         $str = trim($str);
         $word_banned = Yii::$app->redis->hget('common_data', 'word_banned');
         $banned = explode("|", $word_banned);
-        $word = array();
+        $word = [];
         foreach ($banned as $k => $v) {
             $word[$k] = preg_replace("/\\\{(\d+)\\\}/", ".{0,\\1}", preg_quote($v, '/'));
         }
@@ -113,9 +113,9 @@ class Logic
     }
 
     // TODO: connection retry
-    static public function server_request($ip, $port, $cmd, $param = array(), $multi = false)
+    static public function server_request($ip, $port, $cmd, $param = [], $multi = false)
     {
-        $r = array();
+        $r = [];
         $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if ($socket !== false) {
             $result = socket_connect($socket, $ip, $port);
@@ -148,7 +148,7 @@ class Logic
 
     static public function sendSMS($phone, $msg, $withTail = true)
     {
-        $post_data = array();
+        $post_data = [];
         if (is_array($phone)) {
             $post_data['mobile'] = implode(',', $phone);
         } else {
@@ -185,40 +185,41 @@ class Logic
      */
     static public function push($device_id, $device_type, $content, $meet_id, $role, $scene_type = 1)
     {
-        $argu = array(
-            'data' => array(
+        $argu = [
+            'data' => [
                 'alert' => $content,
                 'action' => 'com.yyj.dakashuo.receive.push.msg',
                 'meet_id' => $meet_id,
                 'role' => $role,
                 'type' => $scene_type,
                 'title' => '“大咖说”预约提醒',
-            ),
-            'prod' => Yii::app()->params['lean_cloud_push_type'],
-        );
+            ],
+            'prod' => Yii::$app->params['lean_cloud_push_type'],
+        ];
         if ($device_type == 2) {
-            $argu['where'] = array('installationId' => $device_id);
+            $argu['where'] = ['installationId' => $device_id];
         } elseif ($device_type == 3) {
-            $argu['where'] = array('deviceToken' => $device_id);
+            $argu['where'] = ['deviceToken' => $device_id];
         } else {
             return false;
         }
 //        Yii::log('push:' . json_encode($argu), 'warning');
         return Logic::request('https://api.leancloud.cn/1.1/push',
             json_encode($argu),
-            array(
-                'X-LC-Id: ' . Yii::app()->params['lean_cloud_id'],
-                'X-LC-Key: ' . Yii::app()->params['lean_cloud_key'],
+            [
+                'X-LC-Id: ' . Yii::$app->params['lean_cloud_id'],
+                'X-LC-Key: ' . Yii::$app->params['lean_cloud_key'],
                 'Content-Type: application/json',
-            ));
+            ]);
     }
 
     static public function weixinPush($open_id, $param, $target_url)
     {
-        $token = Yii::app()->redis8->getClient()->get('wx_token');
+        //$token = Yii::app()->redis8->getClient()->get('wx_token');
+        $token = Yii::$app->redis8->get('wx_token');
         if (!$token) {
             $url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' .
-                Yii::app()->params['wx_id'] . '&secret=' . Yii::app()->params['wx_key'];
+                Yii::$app->params['wx_id'] . '&secret=' . Yii::$app->params['wx_key'];
             $r = Logic::request($url);
             if ($r) {
                 $result = json_decode($r, true);
@@ -230,25 +231,25 @@ class Logic
         }
 
         $url = 'https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=' . $token;
-        $param = array(
+        $param = [
             'touser' => $open_id,
-            'template_id' => Yii::app()->params['weixin_push_template'],
+            'template_id' => Yii::$app->params['weixin_push_template'],
             'url' => $target_url,
-            'data' => array(
-                'first' => array(
+            'data' => [
+                'first' => [
                     'value' => $param['first'],
-                ),
-                'OrderSn' => array(
+                ],
+                'OrderSn' => [
                     'value' => $param['id'],
-                ),
-                'OrderStatus' => array(
+                ],
+                'OrderStatus' => [
                     'value' => $param['status'],
-                ),
-                'remark' => array(
+                ],
+                'remark' => [
                     'value' => "\n" . $param['content'],
-                ),
-            ),
-        );
+                ],
+            ],
+        ];
         return Logic::request($url, json_encode($param));
     }
 
@@ -348,7 +349,7 @@ class Logic
         }
 
         if (!$_FILES || !isset($_FILES[$name])) {
-            return array(51, '文件不存在');
+            return [51, '文件不存在'];
         }
         $file = $_FILES[$name];
         if ((($file["type"] == "image/gif")  // TODO: right picture type check
@@ -363,17 +364,17 @@ class Logic
             && ($file["size"] <= 1024 * 8000)
         ) {
             if ($file["error"] > 0) {
-                return array(52, "错误: " . $file["error"]);
+                return [52, "错误: " . $file["error"]];
             } else {
                 $i = pathinfo($file["name"]);
                 $new_name = "i_" . $uid . "_" . md5($file["name"] . rand(100, 999)) . '.' . $i['extension'];
                 $new_file = Yii::getPathOfAlias('webroot.images.' . $type) . '/' . $new_name;
                 move_uploaded_file($file["tmp_name"], $new_file);
                 self::fixImage($new_file);
-                return array(0, $new_name);
+                return [0, $new_name];
             }
         } else {
-            return array(53, "请检查文件的尺寸和大小！");
+            return [53, "请检查文件的尺寸和大小！"];
         }
     }
 
@@ -384,21 +385,21 @@ class Logic
         }
 
         if (!$_FILES || !isset($_FILES[$name])) {
-            return array(51, '文件不存在');
+            return [51, '文件不存在'];
         }
         $file = $_FILES[$name];
         if ($file["size"] <= 1024 * 8000) {
             if ($file["error"] > 0) {
-                return array(52, "错误: " . $file["error"]);
+                return [52, "错误: " . $file["error"]];
             } else {
                 $i = pathinfo($file["name"]);
                 $new_name = md5($file["name"] . rand(100, 999)) . '.' . $i['extension'];
                 $new_file = Yii::getPathOfAlias('application.' . $type) . '/' . $new_name;
                 move_uploaded_file($file["tmp_name"], $new_file);
-                return array(0, $new_name);
+                return [0, $new_name];
             }
         } else {
-            return array(53, "请检查文件的尺寸和大小！");
+            return [53, "请检查文件的尺寸和大小！"];
         }
     }
 
@@ -497,17 +498,17 @@ class Logic
     static public function sendMsg($chat_id, $msg)
     {
         $r = Logic::request('https://leancloud.cn/1.1/rtm/messages',
-            json_encode(array(
+            json_encode([
                 'conv_id' => $chat_id,
                 'from_peer' => 'admin',
                 'message' => $msg,
                 'no_sync' => 'true',
-            )),
-            array(
-                'X-LC-Id: ' . Yii::app()->params['lean_cloud_id'],
-                'X-LC-Key: ' . Yii::app()->params['lean_cloud_master'] . ",master",
+            ]),
+            [
+                'X-LC-Id: ' . Yii::$app->params['lean_cloud_id'],
+                'X-LC-Key: ' . Yii::$app->params['lean_cloud_master'] . ",master",
                 'Content-Type: application/json',
-            ));
+            ]);
         return $r;
     }
 
@@ -528,7 +529,7 @@ class Logic
         $seconds = false;
         $output = [];
         $full_file = Yii::getPathOfAlias('application.answer') . '/' . $file;
-        exec(Yii::app()->params['ffmpeg_cmd'] . " -i $full_file -f null - 2>&1", $output);
+        exec(Yii::$app->params['ffmpeg_cmd'] . " -i $full_file -f null - 2>&1", $output);
         foreach ($output as $line) {
             if (strstr($line, 'time') !== false) {
                 $t1 = explode(' ', $line);
@@ -550,7 +551,7 @@ class Logic
         $new_name = $path_parts['filename'] . '.mp3';
         $path = Yii::getPathOfAlias('application.answer');
         $name = $path . '/' . $new_name;
-        exec(Yii::app()->params['ffmpeg_cmd'] . " -i $path/$amr -ar 22050 -write_xing 0 $name");
+        exec(Yii::$app->params['ffmpeg_cmd'] . " -i $path/$amr -ar 22050 -write_xing 0 $name");
         return $new_name;
     }
 }

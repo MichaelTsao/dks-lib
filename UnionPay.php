@@ -17,19 +17,19 @@ class UnionPay
 
     public function getConsumeParam($order_sn, $price)
     {
-        $params = array(
+        $params = [
             'version' => '5.0.0',                 //版本号
             'encoding' => 'utf-8',                  //编码方式
             'txnType' => '01',                      //交易类型
             'txnSubType' => '01',                  //交易子类
             'bizType' => '000201',                  //业务类型
-            'frontUrl' => Yii::app()->params['web_host'] . "/unionpay/receive",      //后台通知地址
-            'backUrl' => Yii::app()->params['api_host'] . "/pay/notify/from/union",      //后台通知地址
+            'frontUrl' => Yii::$app->params['web_host'] . "/unionpay/receive",      //后台通知地址
+            'backUrl' => Yii::$app->params['api_host'] . "/pay/notify/from/union",      //后台通知地址
             'signMethod' => '01',                  //签名方法
             'channelType' => '08',                  //渠道类型，07-PC，08-手机
             'accessType' => '0',                  //接入类型
             'currencyCode' => '156',              //交易币种，境内商户固定156
-            'merId' => Yii::app()->params['unionpay_mer_id'],        //商户代码，请改自己的测试商户号，此处默认取demo演示页面传递的参数
+            'merId' => Yii::$app->params['unionpay_mer_id'],        //商户代码，请改自己的测试商户号，此处默认取demo演示页面传递的参数
 
             'orderId' => $order_sn,    //商户订单号，8-32位数字字母，不能含“-”或“_”，此处默认取demo演示页面传递的参数，可以自行定制规则
             'txnTime' => date('YmdHis'),    //订单发送时间，格式为YYYYMMDDhhmmss，取北京时间，此处默认取demo演示页面传递的参数
@@ -37,7 +37,7 @@ class UnionPay
 
             // 'reqReserved' =>'透传信息',        //请求方保留域，透传字段，查询、通知、对账文件中均会原样出现，如有需要请启用并修改自己希望透传的数据
             // 其他特殊用法请查看 special_use_purchase.php
-        );
+        ];
         return $this->sign($params);
     }
 
@@ -73,7 +73,7 @@ class UnionPay
     public function refund($queryId, $money)
     {
         $orderId = Logic::getOrderId();
-        $params = array(
+        $params = [
             'version' => '5.0.0',              //版本号
             'encoding' => 'utf-8',              //编码方式
             'signMethod' => '01',              //签名方法
@@ -82,8 +82,8 @@ class UnionPay
             'bizType' => '000201',              //业务类型
             'accessType' => '0',              //接入类型
             'channelType' => '07',              //渠道类型
-            'backUrl' => Yii::app()->params['api_host'] . "/pay/unionNotify", //后台通知地址
-            'merId' => Yii::app()->params['unionpay_mer_id'],            //商户代码，请改成自己的测试商户号，此处默认取demo演示页面传递的参数
+            'backUrl' => Yii::$app->params['api_host'] . "/pay/unionNotify", //后台通知地址
+            'merId' => Yii::$app->params['unionpay_mer_id'],            //商户代码，请改成自己的测试商户号，此处默认取demo演示页面传递的参数
 
             'orderId' => $orderId,        //商户订单号，8-32位数字字母，不能含“-”或“_”，可以自行定制规则，重新产生，不同于原消费，此处默认取demo演示页面传递的参数
             'origQryId' => $queryId, //原消费的queryId，可以从查询接口或者通知接口中获取，此处默认取demo演示页面传递的参数
@@ -91,9 +91,9 @@ class UnionPay
             'txnAmt' => strval($money * 100),       //交易金额，退货总金额需要小于等于原消费
 
             // 'reqReserved' =>'透传信息',            //请求方保留域，透传字段，查询、通知、对账文件中均会原样出现，如有需要请启用并修改自己希望透传的数据
-        );
+        ];
         $params = $this->sign($params);
-        $r = Logic::request(Yii::app()->params['unionpay_server_gateway'], $params);
+        $r = Logic::request(Yii::$app->params['unionpay_server_gateway'], $params);
         parse_str($r, $return);
         if (isset($return['respCode']) && $return['respCode'] == '00') {
             return $orderId;
@@ -199,19 +199,20 @@ class UnionPay
         $iv = str_repeat("\x00", 8);
         $prime1 = substr($bin, 384, 64);
         $des_key = 'SCUBEPGW';
-        $enc = mcrypt_cbc($cipher, $des_key, $prime1, MCRYPT_DECRYPT, $iv);
+        //mcrypt_cbc Warning: This function was DEPRECATED in PHP 5.5.0, and REMOVED in PHP 7.0.0.
+        $enc = mcrypt_encrypt($cipher, $des_key, $prime1, MCRYPT_DECRYPT, $iv);
         $this->private_key["prime1"] = $enc;
         $prime2 = substr($bin, 448, 64);
-        $enc = mcrypt_cbc($cipher, $des_key, $prime2, MCRYPT_DECRYPT, $iv);
+        $enc = mcrypt_encrypt($cipher, $des_key, $prime2, MCRYPT_DECRYPT, $iv);
         $this->private_key["prime2"] = $enc;
         $prime_exponent1 = substr($bin, 512, 64);
-        $enc = mcrypt_cbc($cipher, $des_key, $prime_exponent1, MCRYPT_DECRYPT, $iv);
+        $enc = mcrypt_encrypt($cipher, $des_key, $prime_exponent1, MCRYPT_DECRYPT, $iv);
         $this->private_key["prime_exponent1"] = $enc;
         $prime_exponent2 = substr($bin, 576, 64);
-        $enc = mcrypt_cbc($cipher, $des_key, $prime_exponent2, MCRYPT_DECRYPT, $iv);
+        $enc = mcrypt_encrypt($cipher, $des_key, $prime_exponent2, MCRYPT_DECRYPT, $iv);
         $this->private_key["prime_exponent2"] = $enc;
         $coefficient = substr($bin, 640, 64);
-        $enc = mcrypt_cbc($cipher, $des_key, $coefficient, MCRYPT_DECRYPT, $iv);
+        $enc = mcrypt_encrypt($cipher, $des_key, $coefficient, MCRYPT_DECRYPT, $iv);
         $this->private_key["coefficient"] = $enc;
 
         $hb = $this->sha1_128($this->makeParamsString($params, $type));
@@ -329,9 +330,9 @@ class UnionPay
     public function payout_old($acct, $name, $person_id, $money)
     {
         list($certId, $certKey) = $this->readCer(
-            Yii::app()->params['unionpay_cert_cer']
+            Yii::$app->params['unionpay_cert_cer']
         );
-        $params = array(
+        $params = [
             'version' => '5.0.0',              //版本号
             'encoding' => 'utf-8',              //编码方式
             'signMethod' => '01',              //签名方法
@@ -341,9 +342,9 @@ class UnionPay
             'accessType' => '0',              //接入类型
             'channelType' => '08',              //渠道类型
             'currencyCode' => '156',          //交易币种，境内商户勿改
-            'backUrl' => Yii::app()->params['api_host'] . "/pay/unionNotify", //后台通知地址
+            'backUrl' => Yii::$app->params['api_host'] . "/pay/unionNotify", //后台通知地址
             'encryptCertId' => $certId,     //验签证书序列号
-            'merId' => Yii::app()->params['unionpay_mer_id'],            //商户代码，请改成自己的测试商户号，此处默认取demo演示页面传递的参数
+            'merId' => Yii::$app->params['unionpay_mer_id'],            //商户代码，请改成自己的测试商户号，此处默认取demo演示页面传递的参数
 
             'orderId' => Logic::get_order_sn(),        //商户订单号，8-32位数字字母，不能含“-”或“_”，可以自行定制规则，重新产生，不同于原消费，此处默认取demo演示页面传递的参数
             'txnTime' => date('YmdHis'),        //订单发送时间，格式为YYYYMMDDhhmmss，重新产生，不同于原消费，此处默认取demo演示页面传递的参数
@@ -356,9 +357,9 @@ class UnionPay
                 ], 0) . "}"), //持卡人身份信息，新规范请按此方式填写
 
             // 'reqReserved' =>'透传信息',            //请求方保留域，透传字段，查询、通知、对账文件中均会原样出现，如有需要请启用并修改自己希望透传的数据
-        );
+        ];
         $params = $this->sign($params);
-        $r = Logic::request(Yii::app()->params['unionpay_server_gateway'], $params);
+        $r = Logic::request(Yii::$app->params['unionpay_server_gateway'], $params);
         parse_str($r, $return);
         if (isset($return['respCode']) && $return['respCode'] == '00') {
             return true;
@@ -410,8 +411,8 @@ class UnionPay
     private function sign($params)
     {
         list($certId, $certKey) = $this->readPfx(
-            Yii::app()->params['unionpay_cert'],
-            Yii::app()->params['unionpay_cert_password']
+            Yii::$app->params['unionpay_cert'],
+            Yii::$app->params['unionpay_cert_password']
         );
         $params['certId'] = $certId;
         $params ['signature'] = $this->makeSignature($params, $certKey);

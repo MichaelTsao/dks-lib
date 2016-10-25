@@ -42,14 +42,14 @@ class WeiXinSDK
 
         $signature = sha1($string);
 
-        $signPackage = array(
+        $signPackage = [
             "appId" => $this->appId,
             "nonceStr" => $nonceStr,
             "timestamp" => $timestamp,
             "url" => $url,
             "signature" => $signature,
             "rawString" => $string
-        );
+        ];
         return $signPackage;
     }
 
@@ -82,7 +82,8 @@ class WeiXinSDK
 
     private function getAccessToken()
     {
-        $access_token = Yii::app()->redis8->getClient()->get('wx_token');
+        //$access_token = Yii::app()->redis8->getClient()->get('wx_token');
+        $access_token = Yii::$app->redis8->get('wx_token');
         if (!$access_token) {
             // 如果是企业号用以下URL获取access_token
             // $url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=$this->appId&corpsecret=$this->appSecret";
@@ -132,7 +133,7 @@ class WeiXinSDK
         }
         $string = trim($buff, "&");
         //签名步骤二：在string后加入KEY
-        $string = $string . "&key=" . Yii::app()->params['wx_pay_key'];
+        $string = $string . "&key=" . Yii::$app->params['wx_pay_key'];
         Yii::log('wx_pay_string:' . $string, 'warning');
         //签名步骤三：MD5加密
         $string = md5($string);

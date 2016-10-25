@@ -41,7 +41,7 @@ class Meet
         $key = "meet:" . $meet_id;
         $info = Yii::$app->redis->hgetall($key);
         if (!$info || count($info) != 38) {
-            $data = business\MeetDB::model()->findOne($meet_id)->toArray();
+            $data = business\MeetDB::findOne($meet_id)->toArray();
             if ($data) {
                 $info = $data;
                 if ($info['meet_type'] == Meet::TYPE_SINGLE) {
@@ -102,14 +102,14 @@ class Meet
                     $info['fee'] = strval($price * $info['fee_rate']) . "元"; // 公司收的服务费
                 }
                 $info['fee_rate'] = floatval($info['fee_rate']);
-                Yii::$app->redis->hmset($key, $info);
+                RedisCommon::setHash_Array($key, $info);
             } else {
                 throw new ApiException(ApiException::MEET_NOT_EXIST);
             }
         }
 
         $sql = "select refund_reason, confirm_time from meet_refund where meet_id=$meet_id and tranfer_result=1";
-        if ($refund = Yii::app()->db->createCommand($sql)->queryRow()) {
+        if ($refund = Yii::$app->db->createCommand($sql)->queryOne()) {
             $info['refund_time'] = $refund['confirm_time'];
             $info['refund_reason'] = $refund['refund_reason'];
         }else{
@@ -117,24 +117,24 @@ class Meet
             $info['refund_reason'] = '';
         }
 
-        $comment_images = array();
+        $comment_images = [];
         $sql = "select image from meet_comment_img where meet_id=$meet_id and status=1 ORDER BY sort";
-        $data = Yii::app()->db->createCommand($sql)->queryAll();
+        $data = Yii::$app->db->createCommand($sql)->queryAll();
         foreach ($data as $item) {
             $comment_images[] = Logic::imagePath($item['image'], 'comment');
         }
         $info['comment_image'] = $comment_images;
 
         if ($info['meet_type'] == Meet::TYPE_ASK) {
-            $user_status = Yii::app()->params['ask_user_status'];
-            $expert_status = Yii::app()->params['ask_expert_status'];
-            $user_cancel_status = Yii::app()->params['ask_cancel_user_status'];
-            $expert_cancel_status = Yii::app()->params['ask_cancel_expert_status'];
+            $user_status = Yii::$app->params['ask_user_status'];
+            $expert_status = Yii::$app->params['ask_expert_status'];
+            $user_cancel_status = Yii::$app->params['ask_cancel_user_status'];
+            $expert_cancel_status = Yii::$app->params['ask_cancel_expert_status'];
         } else {
-            $user_status = Yii::app()->params['meet_user_status'];
-            $expert_status = Yii::app()->params['meet_expert_status'];
-            $user_cancel_status = Yii::app()->params['cancel_user_status'];
-            $expert_cancel_status = Yii::app()->params['cancel_expert_status'];
+            $user_status = Yii::$app->params['meet_user_status'];
+            $expert_status = Yii::$app->params['meet_expert_status'];
+            $user_cancel_status = Yii::$app->params['cancel_user_status'];
+            $expert_cancel_status = Yii::$app->params['cancel_expert_status'];
         }
         if ($info['status'] == Meet::ADMIN_CANCEL && $info['refund_time']) {
             $info['user_status'] = $info['expert_status'] = '已退款';
@@ -146,7 +146,7 @@ class Meet
             if ($info['status'] == Meet::USER_CANCEL) {
                 $info['user_cancel_status'] = $info['comment'];
                 $info['expert_cancel_status'] = $info['comment'];
-            } elseif (in_array($info['status'], array(Meet::EXPERT_REFUSE, Meet::AUDIT_REFUSE))) {
+            } elseif (in_array($info['status'], [Meet::EXPERT_REFUSE, Meet::AUDIT_REFUSE])) {
                 $info['user_cancel_status'] = $info['refuse_reason'];
                 $info['expert_cancel_status'] = $info['refuse_reason'];
             } else {
@@ -157,13 +157,13 @@ class Meet
             $info['user_cancel_status'] = $info['expert_cancel_status'] = '';
         }
 
-        $info['user_remind'] = isset(Yii::app()->params['meet_user_remind'][$info['status']]) ?
-            Yii::app()->params['meet_user_remind'][$info['status']] : '';
-        $info['expert_remind'] = isset(Yii::app()->params['meet_expert_remind'][$info['status']]) ?
-            Yii::app()->params['meet_expert_remind'][$info['status']] : '';
+        $info['user_remind'] = isset(Yii::$app->params['meet_user_remind'][$info['status']]) ?
+            Yii::$app->params['meet_user_remind'][$info['status']] : '';
+        $info['expert_remind'] = isset(Yii::$app->params['meet_expert_remind'][$info['status']]) ?
+            Yii::$app->params['meet_expert_remind'][$info['status']] : '';
 
         $sql = "select id from meet_withdraw where meet_id=$meet_id and status=3";
-        $w = Yii::app()->db->createCommand($sql)->queryScalar();
+        $w = Yii::$app->db->createCommand($sql)->queryScalar();
         if ($w) {
             $info['withdraw'] = 1;
         } else {
@@ -172,7 +172,7 @@ class Meet
 
         if ($info['meet_type'] == Meet::TYPE_LESSON) {
             $sql = "SELECT lesson_name, lesson_price, lesson_hour FROM expert_lesson WHERE id=" . $info['topic_id'];
-            $info['lesson'] = Yii::app()->db->createCommand($sql)->queryRow();
+            $info['lesson'] = Yii::$app->db->createCommand($sql)->queryOne();
         } else {
             $info['lesson'] = new stdClass();
         }
@@ -200,7 +200,7 @@ class Meet
             throw new ApiException(60, '您不能自己约见自己');
         }
 
-        $meet = new MeetDB();
+        $meet = new business\MeetDB();
         $meet->meet_type = $meet_type;
         $meet->period_length = $period_length;
         $meet->topic_id = $topic_id;
@@ -213,8 +213,8 @@ class Meet
             $meet->minutes = $expert['period_length'];
             $meet->price = $expert['period_price'];
         } elseif ($meet_type == Meet::TYPE_LESSON) {
-            if ($lesson = Yii::app()->db->createCommand("SELECT * FROM expert_lesson WHERE id=:id AND lesson_status=1")
-                ->bindParam(':id', $topic_id)->queryRow()
+            if ($lesson = Yii::$app->db->createCommand("SELECT * FROM expert_lesson WHERE id=:id AND lesson_status=1")
+                ->bindParam(':id', $topic_id)->queryOne()
             ) {
                 $meet->minutes = intval($lesson['lesson_hour']);
                 $meet->price = $lesson['lesson_price'];
@@ -228,14 +228,14 @@ class Meet
         } else {
             throw new ApiException(ApiException::WRONG_PARAM);
         }
-        $meet->fee_rate = Yii::app()->params['fee_rate'];
+        $meet->fee_rate = Yii::$app->params['fee_rate'];
         $meet->user_price = $user_price;
         $meet->question = $question;
         $meet->intro = $intro;
         $meet->status = self::CREATE;
         $meet->platform = $platform;
-        $meet->price_type = Yii::app()->params['price_type'];
-        $chat_id = Meet::createConversation(array(strval($uid), strval($expert['uid'])));
+        $meet->price_type = Yii::$app->params['price_type'];
+        $chat_id = Meet::createConversation([strval($uid), strval($expert['uid'])]);
         if ($chat_id) {
             $meet->chat_id = $chat_id;
         }
@@ -264,7 +264,7 @@ class Meet
         $comment = Yii::$app->redis->zrevrange($key, $start, $end);
         $all = Yii::$app->redis->zcount($key, '-inf', '+inf');
 
-        $result = array();
+        $result = [];
         foreach ($comment as $key => $c) {
             $comment_one = [];
             if (intval($c) > 0) {
@@ -288,7 +288,7 @@ class Meet
                 $comment_one['company'] = $user['company'];
                 $comment_one['title'] = $user['title'];
 
-                $comment_one['image'] = array();
+                $comment_one['image'] = [];
                 $sql = "select image from meet_comment_img where meet_id=$c and status=1 ORDER BY sort";
                 $data = Yii::$app->db->createCommand($sql)->queryAll();
                 foreach ($data as $item) {
@@ -314,13 +314,13 @@ class Meet
                 $comment_one['icon'] = Logic::imagePath($info['icon'], 'icon');
                 $comment_one['company'] = '';
                 $comment_one['title'] = '';
-                $comment_one['image'] = array();
+                $comment_one['image'] = [];
             }
 
-            $result[$key] = Logic::formatDict($comment_one, array(
+            $result[$key] = Logic::formatDict($comment_one, [
                 'int' => ['uid', 'rate', 'topic_id'],
-                'str' => ['comment', 'comment_time', 'topic_name', 'username', 'icon', 'topic'],
-            ));
+                'str' => ['comment', 'comment_time', 'topic_name', 'username', 'icon', 'topic']
+            ]);
         }
         return [$result, $all];
     }
@@ -331,7 +331,7 @@ class Meet
         $comment = Yii::$app->redis->zrevrange($key, 0, -1);
         $all = Yii::$app->redis->zcount($key, '-inf', '+inf');
 
-        $result = array();
+        $result = [];
         foreach ($comment as $key => $c) {
             $comment_one = [];
             if (intval($c) > 0) {
@@ -362,31 +362,31 @@ class Meet
                     $comment_one['company'] = $user['company'];
                     $comment_one['title'] = $user['title'];
 
-                    $result[] = Logic::formatDict($comment_one, array(
-                        'int' => array('uid', 'rate', 'topic_id'),
-                        'str' => array('comment', 'comment_time', 'topic_name', 'username', 'icon', 'topic'),
-                    ));
+                    $result[] = Logic::formatDict($comment_one, [
+                        'int' => ['uid', 'rate', 'topic_id'],
+                        'str' => ['comment', 'comment_time', 'topic_name', 'username', 'icon', 'topic']
+                    ]);
                     break;
                 }
             }
         }
-        return array($result, $all);
+        return [$result, $all];
     }
 
     static public function pay($meet_id)
     {
-        $meet = MeetDB::model()->findByPk($meet_id);
+        $meet = business\MeetDB::findOne($meet_id);
         if ($meet) {
             $now = date('Y-m-d H:i:s');
             $meet->status = Meet::USER_PAY;
             $meet->pay_time = $now;
             $meet->chat_time = $now;
             if ($meet->save()) {
-                Yii::$app->redis->hmset('meet:' . $meet_id, array(
-                    'status' => Meet::USER_PAY,
-                    'pay_time' => $now,
-                    'chat_time' => $now,
-                ));
+                Yii::$app->redis->hmset('meet:' . $meet_id,
+                    'status',Meet::USER_PAY,
+                    'pay_time',$now,
+                    'chat_time',$now
+                );
                 $msg = new Msg($meet_id, 'after_pay');
                 $msg->send();
 
@@ -411,22 +411,23 @@ class Meet
         if ($meet['status'] != Meet::EXPERT_ACCEPT) {
             throw new ApiException(51, '预约状态不正确');
         }
-        if ($p = PayLog::model()->findByAttributes(array('meet_id' => $meet_id, 'status' => array(1, 2)))) {
-            return array($p->order_id, $p->price, $p->chat_id);
+        //$p = PayLog::model()->findByAttributes(array('meet_id' => $meet_id, 'status' => array(1, 2)))
+        if ($p = business\PayLog::find()->where(['meet_id'=>$meet_id,'status'=>[1,2]])->one()) {
+            return [$p->order_id, $p->price, $p->chat_id];
         }
 
         $order_sn = Logic::get_order_sn();
-        $pay = new PayLog();
+        $pay = new business\PayLog();
         $pay->order_id = $order_sn;
         $pay->meet_id = $meet_id;
         $pay->uid = $uid;
-        $chat_id = Meet::createConversation(array(strval($uid)));
+        $chat_id = Meet::createConversation([strval($uid)]);
         $pay->chat_id = $chat_id;
         $pay->price = floatval($meet['price']);
         $pay->status = 1;
         $pay->save();
 
-        return array($order_sn, $pay->price, $pay->chat_id);
+        return [$order_sn, $pay->price, $pay->chat_id];
     }
 
     static public function newToRun($meet_id, $type, $id)
@@ -497,10 +498,10 @@ class Meet
 
     static public function getUnread($uid)
     {
-        $r = Logic::request('https://leancloud.cn/1.1/rtm/messages/unread/' . $uid, array(), array(
-            'X-AVOSCloud-Application-Id: ' . Yii::app()->params['lean_cloud_id'],
-            'X-AVOSCloud-Application-Key: ' . Yii::app()->params['lean_cloud_key'],
-        ));
+        $r = Logic::request('https://leancloud.cn/1.1/rtm/messages/unread/' . $uid, [], [
+            'X-AVOSCloud-Application-Id: ' . Yii::$app->params['lean_cloud_id'],
+            'X-AVOSCloud-Application-Key: ' . Yii::$app->params['lean_cloud_key'],
+        ]);
         if ($r) {
             $a = json_decode($r);
             return $a->count;
@@ -512,12 +513,12 @@ class Meet
     static public function createConversation($uids)
     {
         $r = Logic::request('https://api.leancloud.cn/1.1/classes/_Conversation',
-            json_encode(array('m' => $uids)),
-            array(
-                'X-LC-Id: ' . Yii::app()->params['lean_cloud_id'],
-                'X-LC-Key: ' . Yii::app()->params['lean_cloud_key'],
+            json_encode(['m' => $uids]),
+            [
+                'X-LC-Id: ' . Yii::$app->params['lean_cloud_id'],
+                'X-LC-Key: ' . Yii::$app->params['lean_cloud_key'],
                 'Content-Type: application/json',
-            ));
+            ]);
         if ($r) {
             $data = json_decode($r, true);
             if (isset($data['objectId'])) {
@@ -530,14 +531,14 @@ class Meet
 
     static public function getLastMsg($chat_id)
     {
-        $r = Logic::request('https://leancloud.cn/1.1/rtm/messages/logs/?convid=' . $chat_id . '&limit=1', array(), array(
-            'X-AVOSCloud-Application-Id: ' . Yii::app()->params['lean_cloud_id'],
-            'X-AVOSCloud-Application-Key: ' . Yii::app()->params['lean_cloud_key'],
-        ));
+        $r = Logic::request('https://leancloud.cn/1.1/rtm/messages/logs/?convid=' . $chat_id . '&limit=1', [], [
+            'X-AVOSCloud-Application-Id: ' . Yii::$app->params['lean_cloud_id'],
+            'X-AVOSCloud-Application-Key: ' . Yii::$app->params['lean_cloud_key'],
+        ]);
         if ($r) {
             $data = json_decode($r, true);
             if (isset($data[0])) {
-                return array($data[0]['data'], $data[0]['timestamp']);
+                return [$data[0]['data'], $data[0]['timestamp']];
             } else {
                 return false;
             }
@@ -557,8 +558,8 @@ class Meet
             throw new ApiException(63, '大咖不可以约见自己');
         }
 
-        $platform = Yii::app()->request->getParam('platform');
-        $ver = Yii::app()->request->getParam('ver');
+        $platform = Yii::$app->request->post('platform');
+        $ver = Yii::$app->request->post('ver');
         if (!($platform == 2 && version_compare($ver, '1.4') < 0)) {
             if (strstr($user['icon'], 'default')) {
                 throw new ApiException(64, '推荐使用真实头像，让大咖对您有一个直观的认识，可以提高约见成功率哦！');
@@ -582,8 +583,8 @@ class Meet
         $list = Yii::$app->redis->zrange('user_meet:' . $uid, 0, -1);
         foreach ($list as $meet_id) {
             $info = Meet::info($meet_id);
-            $status = array(Meet::EXPERT_REFUSE, Meet::EXPERT_TIMEOUT, Meet::USER_PAY_TIMEOUT, Meet::COMMENT,
-                Meet::USER_CANCEL, Meet::AUDIT_REFUSE, Meet::ADMIN_CANCEL);
+            $status = [Meet::EXPERT_REFUSE, Meet::EXPERT_TIMEOUT, Meet::USER_PAY_TIMEOUT, Meet::COMMENT,
+                Meet::USER_CANCEL, Meet::AUDIT_REFUSE, Meet::ADMIN_CANCEL];
             if (!in_array($info['status'], $status) && $info['expert_id'] == $expert_id) {
                 return false;
             }
@@ -636,8 +637,8 @@ class Meet
         } elseif ($choose == 0) {
             $status = Meet::EXPERT_REFUSE;
             if ($meet['meet_type'] == Meet::TYPE_ASK) {
-                MeetAsk::setList('user', $meet['uid'], $meet_id, 1);
-                MeetAsk::setList('expert', $meet['expert_id'], $meet_id, 1);
+                business\MeetAsk::setList('user', $meet['uid'], $meet_id, 1);
+                business\MeetAsk::setList('expert', $meet['expert_id'], $meet_id, 1);
             } else {
                 Meet::runToDone($meet_id, 'user', $meet['uid']);
                 Meet::newToDone($meet_id, 'expert', $meet['expert_id']);
@@ -647,19 +648,19 @@ class Meet
         }
 
         $now = date('Y-m-d H:i:s');
-        $param = array(
+        $param = [
             'status' => $status,
             'confirm_time' => $now,
-        );
+        ];
         if ($choose == 0) {
             $param['refuse_reason'] = $reason;
         }
         if ($meet['user_price'] == 0 && $choose == 1) {
             $param['pay_time'] = $now;
         }
-        Yii::$app->redis->hmset('meet:' . $meet_id, $param);
+        RedisCommon::setHash_Array('meet:' . $meet_id, $param);
 
-        MeetDB::model()->updateByPk($meet_id, $param);
+        Yii::$app->db->createCommand()->update('meet', $param, 'meet_id='.$meet_id)->execute();
         if ($choose == 1) {
             if ($meet['user_price'] == 0) {
                 $msg = new Msg($meet_id, 'after_accept_without_pay');
@@ -672,7 +673,7 @@ class Meet
             } else {
                 $action = 'after_refuse';
             }
-            $msg = new Msg($meet_id, $action, array('reason' => $reason));
+            $msg = new Msg($meet_id, $action, ['reason' => $reason]);
         }
         $msg->send();
     }
@@ -686,7 +687,7 @@ class Meet
 
     public static function backShowId($show_id)
     {
-        if ($e = MeetDB::model()->findByAttributes(['show_id' => $show_id])) {
+        if ($e = business\MeetDB::findOne(['show_id' => $show_id])) {
             return $e->meet_id;
         }
         return $show_id;
@@ -694,7 +695,9 @@ class Meet
 
     public static function checkAskHeard($meet_id)
     {
-        $unread = MeetAsk::model()->countByAttributes(['meet_id' => $meet_id, 'listened' => 0]);
+        $unread = business\MeetAsk::find()
+            ->where(['meet_id' => $meet_id, 'listened' => 0])
+            ->count();
         if ($unread > 0) {
             return false;
         } else {

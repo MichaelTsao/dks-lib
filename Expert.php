@@ -57,7 +57,8 @@ class Expert
             $info['want_people'] = business\UserFav::find()
                 ->where(['expert_id' => $expert_id])
                 ->count();
-            Yii::$app->redis->hmset($key, $info);
+            //Yii::$app->redis->hmset($key, $info);
+            RedisCommon::setHash_Array($key, $info);
         }
         $info['locations'] = self::getLocations($info['expert_id']);
         $info['location'] = implode('，', $info['locations']);
@@ -184,7 +185,7 @@ class Expert
                 $topic['full_intro'] = $data->full_intro;
                 $topic['expert_id'] = $data->expert_id;
                 $topic['status'] = $data->status;
-                Yii::$app->redis->hmset($key, $topic);
+                RedisCommon::setHash_Array($key, $topic);
             } else {
 //                throw new ApiException(ApiException::TOPIC_NOT_EXIST);
                 return false;
@@ -200,7 +201,7 @@ class Expert
         if ($resident) {
             return $resident;
         } elseif ($location_id) {
-            return Yii::app()->db->createCommand("select name from location where id=$location_id")->queryScalar();
+            return Yii::$app->db->createCommand("select name from location where id=$location_id")->queryScalar();
         } else {
             return '北京';
         }
@@ -216,7 +217,7 @@ class Expert
 
     static public function getField($field_id)
     {
-        return Yii::app()->db->createCommand("select name from field where id=$field_id")->queryScalar();
+        return Yii::$app->db->createCommand("select name from field where id=$field_id")->queryScalar();
     }
 
     static public function getPoolList($id)
@@ -224,7 +225,7 @@ class Expert
         $show = Yii::$app->redis->get('position_show:' . $id);
         $r = Yii::$app->redis->zrevrange('position_top:' . $id, 0, -1);
         if (!$r) {
-            $r = array();
+            $r = [];
         }
         $last = $show - count($r);
         if ($last > 0) {
@@ -254,7 +255,8 @@ class Expert
         if (!$expert_id || !$type || $info === null) {
             throw new ApiException(ApiException::WRONG_PARAM);
         }
-        ExpertDB::model()->updateByPk($expert_id, array($type => $info));
+        //ExpertDB::model()->updateByPk($expert_id, array($type => $info));
+        Yii::$app->db->createCommand()->update('expert', [$type => $info], 'expert_id = '.$expert_id)->execute();
         Yii::$app->redis->hset('expert:' . $expert_id, $type, $info);
     }
 
@@ -317,7 +319,7 @@ class Expert
 
     public static function backShowId($show_id)
     {
-        if ($e = ExpertDB::model()->findByAttributes(['show_id' => $show_id])){
+        if ($e = business\ExpertDB::findOne(['show_id' => $show_id])){
             return $e->expert_id;
         }
         return $show_id;

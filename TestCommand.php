@@ -42,19 +42,19 @@ class TestCommand extends Controller
         }
 
         $now = date('Y-m-d H:i:s');
-        Yii::$app->redis->hmset('meet:' . $meet_id, array(
-            'status' => $status,
-            'confirm_time' => $now,
-        ));
-        MeetDB::model()->updateByPk($meet_id, array('confirm_time' => $now, 'status' => $status));
+        Yii::$app->redis->hmset('meet:' . $meet_id,
+            'status',$status,
+            'confirm_time',$now
+        );
+        Yii::$app->db->createCommand()->update('meet', ['confirm_time' => $now, 'status' => $status], 'meet_id='.$meet_id)->execute();
     }
 
     public function actionLastMsg($chat_id)
     {
-        $r = Logic::request('https://leancloud.cn/1.1/rtm/messages/logs?convid=' . $chat_id, array(), array(
-            'X-LC-Id: ' . Yii::app()->params['lean_cloud_id'],
-            'X-LC-Key: ' . Yii::app()->params['lean_cloud_master'] . ',master',
-        ));
+        $r = Logic::request('https://leancloud.cn/1.1/rtm/messages/logs?convid=' . $chat_id, [], [
+            'X-LC-Id: ' . Yii::$app->params['lean_cloud_id'],
+            'X-LC-Key: ' . Yii::$app->params['lean_cloud_master'] . ',master',
+        ]);
         if ($r) {
             $data = json_decode($r, true);
             var_dump($data);
@@ -64,32 +64,32 @@ class TestCommand extends Controller
     public function actionChat()
     {
         $r = Logic::request('https://api.leancloud.cn/1.1/classes/_Conversation',
-            json_encode(array('m' => array(1, 2))),
-            array(
-                'X-LC-Id: ' . Yii::app()->params['lean_cloud_id'],
-                'X-LC-Key: ' . Yii::app()->params['lean_cloud_key'],
+            json_encode(['m' => [1, 2]]),
+            [
+                'X-LC-Id: ' . Yii::$app->params['lean_cloud_id'],
+                'X-LC-Key: ' . Yii::$app->params['lean_cloud_key'],
                 'Content-Type: application/json',
-            ));
+            ]);
         var_dump($r);
     }
 
     public function actionRepairChat()
     {
-        $data = MeetDB::model()->findAll();
+        $data = business\MeetDB::findAll();
         foreach ($data as $item) {
             if ($item->chat_id) {
                 continue;
             }
             $expert = Expert::info($item->expert_id);
-            $item->chat_id = Meet::createConversation(array($item->uid, $expert['uid']));
+            $item->chat_id = Meet::createConversation([$item->uid, $expert['uid']]);
             $item->save();
-            echo implode('|', array($item->meet_id, $item->chat_id)) . "\n";
+            echo implode('|', [$item->meet_id, $item->chat_id]) . "\n";
         }
     }
 
     public function actionRepairChatMsg()
     {
-        $data = MeetDB::model()->findAll();
+        $data = business\MeetDB::findAll();
         foreach ($data as $item) {
             if ($item->last_msg || !$item->chat_id || ($item->status != Meet::USER_PAY && $item->status != Meet::MEET && $item->status != Meet::COMMENT)) {
                 continue;
@@ -100,16 +100,16 @@ class TestCommand extends Controller
                 $item->last_msg = $msg;
                 $item->last_msg_time = date('Y-m-d H:i:s', $time / 1000);
                 $item->save();
-                echo implode('|', array($item->meet_id, $item->last_msg, $item->last_msg_time)) . "\n";
+                echo implode('|', [$item->meet_id, $item->last_msg, $item->last_msg_time]) . "\n";
             }
         }
     }
 
     public function actionRInfo()
     {
-        $data = ExpertDB::model()->findAll();
+        $data = business\ExpertDB::findAll();
         foreach ($data as $item) {
-            UserDB::model()->updateByPk($item->uid, array('realname' => $item->name, 'intro' => $item->full_intro));
+            Yii::$app->db->createCommand()->update('user', ['realname' => $item->name, 'intro' => $item->full_intro], 'uid='.$item->uid)->execute();
         }
     }
 
@@ -131,17 +131,17 @@ class TestCommand extends Controller
     {
         $meet = Meet::info($meet_id);
         $now = date('Y-m-d H:i:s');
-        Yii::$app->redis->hmset('meet:' . $meet_id, array(
-            'status' => Meet::MEET,
-            'meet_time' => $now,
-        ));
+        Yii::$app->redis->hmset('meet:' . $meet_id,
+            'status',Meet::MEET,
+            'meet_time',$now
+        );
         Yii::$app->redis->hincrby('expert:' . $meet['expert_id'], 'meet_people', 1);
         $hours = $meet['minutes'] / 60;
         $new_hours = Yii::$app->redis->hincrbyfloat('expert:' . $meet['expert_id'], 'hours', $hours);
         Yii::$app->redis->zincrby('expert_longtime', $hours, $meet['expert_id']);
         Yii::$app->redis->zincrby('expert_active', 1, $meet['expert_id']);
-        MeetDB::model()->updateByPk($meet_id, array('status' => Meet::MEET, 'meet_time' => $now));
-        ExpertDB::model()->updateByPk($meet['expert_id'], array('hours' => $new_hours));
+        Yii::$app->db->createCommand()->update('meet', ['status' => Meet::MEET, 'meet_time' => $now], 'meet_id='.$meet_id)->execute();
+        Yii::$app->db->createCommand()->update('expert', ['hours' => $new_hours], 'expert_id='.$meet['expert_id'])->execute();
         $msg = new Msg($meet_id, 'after_confirm');
         $msg->send();
 
@@ -163,13 +163,13 @@ class TestCommand extends Controller
     public function actionRepairComment($meet_id)
     {
         $info = Meet::info($meet_id);
-        $data = array(
+        $data = [
             'status' => Meet::MEET,
             'comment' => '',
             'rate' => null,
             'comment_time' => null,
-        );
-        MeetDB::model()->updateByPk($meet_id, $data);
+        ];
+        Yii::$app->db->createCommand()->update('meet', $data, 'meet_id='.$meet_id)->execute();
         //Yii::$app->redis->hmset('meet:'.$meet_id, $data);
         //Meet::doneToRun($meet_id, 'user', $info['uid']);
     }
@@ -226,13 +226,13 @@ class TestCommand extends Controller
 
     public function actionSetShowID()
     {
-        $expert = ExpertDB::model()->findAll();
+        $expert = business\ExpertDB::findAll();
         foreach ($expert as $item) {
             $item->show_id = Logic::getId();
             $item->save();
         }
 
-        $meet = MeetDB::model()->findAll();
+        $meet = business\MeetDB::findAll();
         foreach ($meet as $item) {
             $item->show_id = Logic::getOrderId();
             $item->save();

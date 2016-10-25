@@ -5,7 +5,7 @@ use Yii;
 use yii\web\Application;
 use yii\console;
 use yii\log;
-
+use DOMDocument;
 
 /**
  * Created by PhpStorm.
@@ -97,7 +97,7 @@ class AlipaySDK
     {
         //把数组所有元素，按照“参数=参数值”的模式用“&”字符拼接成字符串
         $prestr = $this->createLinkstring($para_sort);
-        $mysign = $this->md5Sign($prestr, Yii::app()->params['alipay_key']);
+        $mysign = $this->md5Sign($prestr, Yii::$app->params['alipay_key']);
         return $mysign;
     }
 
@@ -152,14 +152,15 @@ class AlipaySDK
         //待请求参数数组
         $para = $this->buildRequestPara($para_temp);
 
-        $sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='" . $this->alipay_gateway_new . "' method='" . $method . "'>";
+        //$sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='" . $this->alipay_gateway_new . "' method='" . $method . "'>";
+        $sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='/index.php?r=user/register' method='" . $method . "'>";
         while (list ($key, $val) = each($para)) {
             $sHtml .= "<input type='hidden' name='" . $key . "' value='" . $val . "'/>";
         }
 
         //submit按钮控件请不要含有name属性
         $sHtml = $sHtml . "<input type='submit' value='" . $button_name . "'></form>";
-        $sHtml = $sHtml . "<script>document.forms['alipaysubmit'].submit();</script>";
+        //$sHtml = $sHtml . "<script>document.forms['alipaysubmit'].submit();</script>";
         return $sHtml;
     }
 
@@ -298,7 +299,7 @@ class AlipaySDK
         //把数组所有元素，按照“参数=参数值”的模式用“&”字符拼接成字符串
         $prestr = $this->createLinkstring($para_sort);
 
-        $isSgin = $this->md5Verify($prestr, $sign, Yii::app()->params['alipay_key']);
+        $isSgin = $this->md5Verify($prestr, $sign, Yii::$app->params['alipay_key']);
 
         return $isSgin;
     }
@@ -314,7 +315,7 @@ class AlipaySDK
         //把数组所有元素，按照“参数=参数值”的模式用“&”字符拼接成字符串
         $prestr = $this->createLinkstring($para_sort);
 
-        $isSgin = $this->rsaVerify($prestr, trim(Yii::app()->params['alipay_public_key']), $sign);
+        $isSgin = $this->rsaVerify($prestr, trim(Yii::$app->params['alipay_public_key']), $sign);
 
         return $isSgin;
     }
@@ -365,14 +366,14 @@ class AlipaySDK
     function getResponse($notify_id)
     {
         $transport = 'http'; // 'http' or 'https'
-        $partner = Yii::app()->params['alipay_partner'];
+        $partner = Yii::$app->params['alipay_partner'];
         if ($transport == 'https') {
             $veryfy_url = $this->https_verify_url;
         } else {
             $veryfy_url = $this->http_verify_url;
         }
         $veryfy_url = $veryfy_url . "partner=" . $partner . "&notify_id=" . $notify_id;
-        $responseTxt = $this->getHttpResponseGET($veryfy_url, Yii::app()->params['alipay_cacert']);
+        $responseTxt = $this->getHttpResponseGET($veryfy_url, Yii::$app->params['alipay_cacert']);
 
         return $responseTxt;
     }
@@ -421,16 +422,16 @@ class AlipaySDK
         }
 
         $sysParams["service"] = 'batch_trans_notify';
-        $sysParams["partner"] = Yii::app()->params['alipay_partner'];
-        $sysParams["_input_charset"] = trim(strtolower(Yii::app()->params['alipay_charset']));
+        $sysParams["partner"] = Yii::$app->params['alipay_partner'];
+        $sysParams["_input_charset"] = trim(strtolower(Yii::$app->params['alipay_charset']));
         $sysParams["account_name"] = '北京赢语角信息技术有限公司';
         $sysParams["detail_data"] = implode('|', $d);
         $sysParams["batch_no"] = $batch_no;
         $sysParams["batch_num"] = count($data);
         $sysParams["batch_fee"] = $moneySum;
-        $sysParams["email"] = Yii::app()->params['alipay_seller_email'];
+        $sysParams["email"] = Yii::$app->params['alipay_seller_email'];
         $sysParams["pay_date"] = date("Ymd");
-        $sysParams["notify_url"] = Yii::app()->params['api_host'] . '/pay/aliNotify';
+        $sysParams["notify_url"] = Yii::$app->params['api_host'] . '/pay/aliNotify';
 
         Yii::log('ali call trans: '. json_encode($sysParams), 'warning');
         return $this->buildRequestString($sysParams);
@@ -453,14 +454,14 @@ class AlipaySDK
             return false;
         }
         $sysParams["service"] = 'refund_fastpay_by_platform_pwd';
-        $sysParams["partner"] = Yii::app()->params['alipay_partner'];
-        $sysParams["_input_charset"] = trim(strtolower(Yii::app()->params['alipay_charset']));
-        $sysParams["seller_user_id"] = Yii::app()->params['alipay_partner'];
+        $sysParams["partner"] = Yii::$app->params['alipay_partner'];
+        $sysParams["_input_charset"] = trim(strtolower(Yii::$app->params['alipay_charset']));
+        $sysParams["seller_user_id"] = Yii::$app->params['alipay_partner'];
         $sysParams["refund_date"] = date("Y-m-d H:i:s");
         $sysParams["batch_no"] = date('Ymd') . rand(1000, 9999);
         $sysParams["batch_num"] = count($data);
         $sysParams["detail_data"] = implode('#', $d);
-        $sysParams["notify_url"] = Yii::app()->params['api_host'] . '/pay/aliNotify';
+        $sysParams["notify_url"] = Yii::$app->params['api_host'] . '/pay/aliNotify';
 
         Yii::log('ali call refund: '. json_encode($sysParams), 'warning');
         return $this->buildRequestString($sysParams);

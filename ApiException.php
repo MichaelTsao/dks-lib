@@ -52,7 +52,7 @@ class ApiException extends Exception
 
     static public function handle(ExceptionEvent $event){
         $e = $event->exception;
-        if ($e instanceof ApiException && !Yii::app()->getRequest()->getIsAjaxRequest()) {
+        if ($e instanceof ApiException && !Yii::$app->request->isAjax()) {
             Logic::makeResult($e->data, $e->pager, $e->code, $e->message);
             $event->handled = true;
         }

@@ -38,10 +38,10 @@ class Server {
         $key = 'meet_chat:'.$this->meet_id;
         $msg = Yii::$app->redis->lrange($key, $position, -1);
         if (!$msg) {
-            $msg = array();
+            $msg = [];
         }
         list($pid, $r) = self::makeEnterRoomPkg($this->uid, $this->conn_id, $msg, $this->meet_id, 1, 1);
-        Logic::server_request(Yii::app()->params['cserver_ip'], Yii::app()->params['cserver_port'], $pid, $r);
+        Logic::server_request(Yii::$app->params['cserver_ip'], Yii::$app->params['cserver_port'], $pid, $r);
         Yii::$app->redis->set("meet_chat_unread:".$this->meet_id.":".$this->uid, 0);
 
         return 0;
@@ -84,10 +84,10 @@ class Server {
                 $from_info = $this->uid;
                 $to_info = $to_uid;
                 list($pid, $data) = self::makeChatPkg($to_uid, $conn_id, $this->meet_id, $message, $secret, $from_info, $to_info);
-                Logic::server_request(Yii::app()->params['cserver_ip'], Yii::app()->params['cserver_port'], $pid, $data);
+                Logic::server_request(Yii::$app->params['cserver_ip'], Yii::$app->params['cserver_port'], $pid, $data);
             }
         }
-        Yii::$app->redis->rpush('meet_chat:'.$this->meet_id, implode('|', array($this->uid, time(), $message)));
+        Yii::$app->redis->rpush('meet_chat:'.$this->meet_id, implode('|', [$this->uid, time(), $message]));
 
         return 0;
     }
@@ -101,10 +101,10 @@ class Server {
         $key = "room_mute:$this->meet_id:$to_uid";
         Yii::$app->redis->setex($key, $seconds, $time);
 
-        self::noticeOthers('mute', $this->meet_id, array('from_uid'=>$this->uid, 'conn_id'=>$this->conn_id, 'to_uid'=>$to_uid, 'status'=>0));
+        self::noticeOthers('mute', $this->meet_id, ['from_uid'=>$this->uid, 'conn_id'=>$this->conn_id, 'to_uid'=>$to_uid, 'status'=>0]);
 
         $sql = "INSERT IGNORE INTO c_room_chatdisable_list (uid, meet_id, expire) VALUES ('$this->uid', '$this->meet_id', '$time')";
-        Yii::app()->db->createCommand($sql)->execute();
+        Yii::$app->db->createCommand($sql)->execute();
 
         return 0;
     }
@@ -114,7 +114,7 @@ class Server {
             return 1;
         }
         // TODO: check right of from user
-        $param = array('uid'=>$to_uid, 'meet_id'=>$this->meet_id, 'type'=>3);
+        $param = ['uid'=>$to_uid, 'meet_id'=>$this->meet_id, 'type'=>3];
         if ($is_admin) {
             $admin = CRoomLimits::model()->findByAttributes($param);
             if (!$admin) {
@@ -137,15 +137,15 @@ class Server {
             $from_info = Room::getUserInfo($this->meet_id, $this->uid, $this->conn_id);
             $to_info = Room::getUserInfo($this->meet_id, $to_uid, 0);
             foreach ($conns as $c) {
-                $r = array(
+                $r = [
                     'uid'=>$to_uid,
                     'meet_id'=>$this->meet_id,
                     'conn_id'=>$c,
                     'from_info'=>$from_info,
                     'to_info'=>$to_info,
                     'is_admin'=>$is_admin,
-                );
-                Logic::server_request(Yii::app()->params['cserver_ip'], Yii::app()->params['cserver_port'], 52, $r);
+                ];
+                Logic::server_request(Yii::$app->params['cserver_ip'], Yii::$app->params['cserver_port'], 52, $r);
             }
         }
         return 0;
@@ -156,41 +156,41 @@ class Server {
         if ($r != 0) {
             return $r;
         }
-        self::noticeOthers('fav', $this->meet_id, array('count'=>$d));
+        self::noticeOthers('fav', $this->meet_id, ['count'=>$d]);
         return 0;
     }
 
     public function kickAway($to_uid){
-        self::noticeOthers('kick_away', $this->meet_id, array('from_uid'=>$this->uid, 'to_uid'=>$to_uid, 'conn_id'=>$this->conn_id));
+        self::noticeOthers('kick_away', $this->meet_id, ['from_uid'=>$this->uid, 'to_uid'=>$to_uid, 'conn_id'=>$this->conn_id]);
         return 0;
     }
 
     static public function makeEnterRoomPkg($to_uid, $conn_id, $meet_id, $msg){
         $pid = 21;
-        $r = array('uid'=>$to_uid, 'meet_id'=>$meet_id, 'msg'=>$msg, 'conn_id'=>$conn_id, 'result'=>0);
-        return array($pid, $r);
+        $r = ['uid'=>$to_uid, 'meet_id'=>$meet_id, 'msg'=>$msg, 'conn_id'=>$conn_id, 'result'=>0];
+        return [$pid, $r];
     }
 
     static public function makeChatPkg($to_uid, $conn_id, $meet_id, $msg, $secret, $from_info, $to_info){
-        $r = array('uid'=>$to_uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'msg'=>$msg, 'secret'=>$secret,
-            'from_info'=>$from_info, 'to_info'=>$to_info);
-        return array(32, $r);
+        $r = ['uid'=>$to_uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'msg'=>$msg, 'secret'=>$secret,
+            'from_info'=>$from_info, 'to_info'=>$to_info];
+        return [32, $r];
     }
 
     static public function makeMutePkg($uid, $conn_id, $meet_id, $from_info, $to_info, $status){
-        $r = array('uid'=>$uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'enabled'=>$status,
-            'to_info'=>$to_info, 'from_info'=>$from_info);
-        return array(62, $r);
+        $r = ['uid'=>$uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'enabled'=>$status,
+            'to_info'=>$to_info, 'from_info'=>$from_info];
+        return [62, $r];
     }
 
     static public function makeKickAwayPkg($uid, $conn_id, $meet_id, $to_uid, $to_info){
-        $r = array('uid'=>$uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'to_info'=>$to_info, 'to_uid'=>$to_uid);
-        return array(72, $r);
+        $r = ['uid'=>$uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'to_info'=>$to_info, 'to_uid'=>$to_uid];
+        return [72, $r];
     }
 
     static public function makeFavPkg($uid, $conn_id, $meet_id, $count){
-        $r = array('uid'=>$uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'count'=>$count);
-        return array(26, $r);
+        $r = ['uid'=>$uid, 'meet_id'=>$meet_id, 'conn_id'=>$conn_id, 'count'=>$count];
+        return [26, $r];
     }
 
     public function sendResult($pid, $r, $param=''){
@@ -203,6 +203,6 @@ class Server {
                 $result[$key] = $value;
             }
         }
-        Logic::server_request(Yii::app()->params['cserver_ip'], Yii::app()->params['cserver_port'], $pid, $result);
+        Logic::server_request(Yii::$app->params['cserver_ip'], Yii::$app->params['cserver_port'], $pid, $result);
     }
 }
