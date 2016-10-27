@@ -174,7 +174,7 @@ class Meet
             $sql = "SELECT lesson_name, lesson_price, lesson_hour FROM expert_lesson WHERE id=" . $info['topic_id'];
             $info['lesson'] = Yii::$app->db->createCommand($sql)->queryOne();
         } else {
-            $info['lesson'] = new stdClass();
+            $info['lesson'] = new \stdClass();
         }
 
         return $info;
