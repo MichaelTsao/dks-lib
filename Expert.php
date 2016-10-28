@@ -135,7 +135,7 @@ class Expert
         }
         $info['want_meet'] = $meet_want;
 
-        if (Yii::app()->request->getParam('platform') == 5) {
+        if (Yii::$app->request->post('platform') == 5) {
             $sql = "select name from expert_label where expert_id=$expert_id";
             $labels = Yii::$app->db->createCommand($sql)->queryAll();
             $l = [];
