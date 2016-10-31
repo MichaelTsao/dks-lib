@@ -12,7 +12,7 @@ use Yii;
 use yii\redis\Cache;
 use yii\redis\Connection;
 
-class RedisCommon
+class RedisCommon extends Connection
 {
     /**
      * 封装hmset方法
