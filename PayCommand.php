@@ -25,7 +25,7 @@ class PayCommand extends Controller
 //                echo $id.' '.$r."\n";
                 if ($r == 1 || $r == 2) {
                     $cmd = Yii::$app->params['admin_path'] . '/yiic common withdrawAliCallBack --business_id=' . $id . ' --data=' . ($r == 1 ? 1 : 0);
-                    Yii::log('ali callback: ' . $cmd, 'warning');
+                    Yii::warning('ali callback: ' . $cmd);
                     exec($cmd);
                 }
                 sleep(4);

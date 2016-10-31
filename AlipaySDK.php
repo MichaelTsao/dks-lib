@@ -433,7 +433,7 @@ class AlipaySDK
         $sysParams["pay_date"] = date("Ymd");
         $sysParams["notify_url"] = Yii::$app->params['api_host'] . '/pay/aliNotify';
 
-        Yii::log('ali call trans: '. json_encode($sysParams), 'warning');
+        Yii::warning('ali call trans: '. json_encode($sysParams));
         return $this->buildRequestString($sysParams);
     }
 
@@ -463,7 +463,7 @@ class AlipaySDK
         $sysParams["detail_data"] = implode('#', $d);
         $sysParams["notify_url"] = Yii::$app->params['api_host'] . '/pay/aliNotify';
 
-        Yii::log('ali call refund: '. json_encode($sysParams), 'warning');
+        Yii::warning('ali call refund: '. json_encode($sysParams));
         return $this->buildRequestString($sysParams);
     }
 }

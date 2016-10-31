@@ -134,7 +134,7 @@ class WeiXinSDK
         $string = trim($buff, "&");
         //签名步骤二：在string后加入KEY
         $string = $string . "&key=" . Yii::$app->params['wx_pay_key'];
-        Yii::log('wx_pay_string:' . $string, 'warning');
+        Yii::warning('wx_pay_string:' . $string);
         //签名步骤三：MD5加密
         $string = md5($string);
         //签名步骤四：所有字符转为大写
@@ -154,7 +154,7 @@ class WeiXinSDK
         $string = trim($buff, "&");
         //签名步骤二：在string后加入KEY
         $string = $string . "&key=" . $this->appPayKey;
-        Yii::log('wx_pay_string:' . $string, 'warning');
+        Yii::warning('wx_pay_string:' . $string);
         //签名步骤三：MD5加密
         $string = md5($string);
         //签名步骤四：所有字符转为大写

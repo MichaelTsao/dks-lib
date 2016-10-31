@@ -242,7 +242,7 @@ class User
         ];
         $url = 'http://demo.chuangxin360.com:8090/api/userauth/decryptTokenRecord';
         $r = Logic::request($url, $params);
-        Yii::log('fengyun: ' . $r, 'warning');
+        Yii::warning('fengyun: ' . $r);
         $result = json_decode($r, true);
         if (isset($result['code']) && $result['code'] == 200 && isset($result['data'])) {
             return $result['data'];
