@@ -23,7 +23,7 @@ class User
 
     static public function auth($token){
         if (!$token) {
-            throw new ApiException(ApiException::TOKEN_FAIL);
+            ApiException::Msgs(ApiException::TOKEN_FAIL);
         }
         $key = 'token:'.$token;
         $value = Yii::$app->redis->get($key);
@@ -39,11 +39,11 @@ class User
             }
         }
         if (!$value) {
-            throw new ApiException(ApiException::TOKEN_FAIL);
+            ApiException::Msgs(ApiException::TOKEN_FAIL);
         }
         list($ctime, $uid) = explode('|', $value);
         if (time() - $ctime >= 86400 * 30) {
-            throw new ApiException(ApiException::TOKEN_FAIL);
+            ApiException::Msgs(ApiException::TOKEN_FAIL);
         }
         return $uid;
     }
@@ -56,10 +56,10 @@ class User
         $user = business\UserDB::findOne(['phone'=>$phone, 'password'=>md5($password)]);
         //$user = UserDB::model()->findByAttributes(array('phone'=>$phone, 'password'=>md5($password)));
         if (!$user) {
-            throw new ApiException(ApiException::LOGIN_FAIL);
+            ApiException::Msgs(ApiException::LOGIN_FAIL);
         }
         if ($user->status != 1) {
-            throw new ApiException(ApiException::USER_CLOSED);
+            ApiException::Msgs(ApiException::USER_CLOSED);
         }
         $token = self::makeToken($user->uid);
         $token_info = new business\UserToken();
@@ -114,7 +114,7 @@ class User
                     $info['access'] = -1;
                 }
             }else{
-                throw new ApiException(ApiException::USER_NOT_EXIST);
+                ApiException::Msgs(ApiException::USER_NOT_EXIST);
             }
             RedisCommon::setHash_Array($key, $info);
         }
@@ -134,7 +134,7 @@ class User
     static public function expertID($uid){
         $user = self::info($uid);
         if (!$user['expert']) {
-            throw new ApiException(ApiException::USER_NOT_EXPERT);
+            ApiException::Msgs(ApiException::USER_NOT_EXPERT);
         }
         return $user['expert'];
     }
@@ -196,15 +196,15 @@ class User
             $key = 'ask_status';
             $error = 59;
         }else{
-            throw new ApiException(ApiException::WRONG_PARAM);
+            ApiException::Msgs(ApiException::WRONG_PARAM);
         }
         if ($type == 'intro') {
             $len = mb_strlen($info, 'utf-8');
             if ($len < 30) {
-                throw new ApiException(55, '个人介绍不能少于30个字');
+                ApiException::Msgs(55, '个人介绍不能少于30个字');
             }
             if ($len > 1000) {
-                throw new ApiException(56, '个人介绍不能多于1000个字');
+                ApiException::Msgs(56, '个人介绍不能多于1000个字');
             }
         }
         if (($type != 'access' && $type != 'period_access' && $type != 'lesson_access' && $type != 'ask_access' && !$info)
@@ -213,7 +213,7 @@ class User
             || ($type == 'lesson_access' && !in_array($info, [0, 1]))
             || ($type == 'ask_access' && !in_array($info, [0, 1]))
         ) {
-            throw new ApiException($error, $show.'填写错误');
+            ApiException::Msgs($error, $show.'填写错误');
         }
 
         if ($type == 'access' || $type == 'period_access' || $type == 'lesson_access' || $type == 'ask_access') {

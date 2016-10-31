@@ -35,7 +35,7 @@ class Expert
                     ->one();
             }
             if (!$info) {
-                throw new ApiException(ApiException::EXPERT_NOT_EXIST);
+                ApiException::Msgs(ApiException::EXPERT_NOT_EXIST);
             }
             $info['real_price'] = $info['price'];
             $info['price'] = $info['price'] * $info['meet_hour'];
@@ -187,7 +187,7 @@ class Expert
                 $topic['status'] = $data->status;
                 RedisCommon::setHash_Array($key, $topic);
             } else {
-//                throw new ApiException(ApiException::TOPIC_NOT_EXIST);
+//                ApiException::Msgs(ApiException::TOPIC_NOT_EXIST);
                 return false;
             }
         } else {
@@ -253,7 +253,7 @@ class Expert
     static public function update($expert_id, $type, $info)
     {
         if (!$expert_id || !$type || $info === null) {
-            throw new ApiException(ApiException::WRONG_PARAM);
+            ApiException::Msgs(ApiException::WRONG_PARAM);
         }
         //ExpertDB::model()->updateByPk($expert_id, array($type => $info));
         Yii::$app->db->createCommand()->update('expert', [$type => $info], 'expert_id = '.$expert_id)->execute();

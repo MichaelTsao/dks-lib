@@ -38,7 +38,7 @@ class TestCommand extends Controller
             Meet::runToDone($meet_id, 'user', $meet['uid']);
             Meet::newToDone($meet_id, 'expert', $meet['expert_id']);
         } else {
-            throw new ApiException(ApiException::WRONG_PARAM);
+            ApiException::Msgs(ApiException::WRONG_PARAM);
         }
 
         $now = date('Y-m-d H:i:s');

@@ -58,12 +58,12 @@ class Server {
         }
         try {
             $meet_info = Meet::info($this->meet_id);
-        } catch (ApiException $e) {
+        } catch (Exception $e) {
             return 2;
         }
         try {
             $expert_info = Expert::info($meet_info['expert_id']);
-        } catch (ApiException $e) {
+        } catch (Exception $e) {
             return 3;
         }
         if ($this->uid == $meet_info['uid']) {

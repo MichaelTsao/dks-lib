@@ -104,7 +104,7 @@ class Meet
                 $info['fee_rate'] = floatval($info['fee_rate']);
                 RedisCommon::setHash_Array($key, $info);
             } else {
-                throw new ApiException(ApiException::MEET_NOT_EXIST);
+                ApiException::Msgs(ApiException::MEET_NOT_EXIST);
             }
         }
 
@@ -184,20 +184,20 @@ class Meet
     {
         $expert = Expert::info($expert_id);
         if ($meet_type == self::TYPE_SINGLE && !$expert['access_status']) {
-            throw new ApiException(61, '该行家暂停预约');
+            ApiException::Msgs(61, '该行家暂停预约');
         }
         if ($meet_type == self::TYPE_PERIOD && !$expert['period_status']) {
-            throw new ApiException(61, '该行家暂停预约');
+            ApiException::Msgs(61, '该行家暂停预约');
         }
         if ($meet_type == self::TYPE_LESSON && !$expert['lesson_status']) {
-            throw new ApiException(61, '该行家暂停预约');
+            ApiException::Msgs(61, '该行家暂停预约');
         }
         if ($meet_type == self::TYPE_ASK && !$expert['ask_status']) {
-            throw new ApiException(61, '该行家暂停预约');
+            ApiException::Msgs(61, '该行家暂停预约');
         }
 
         if ($uid == $expert['uid']) {
-            throw new ApiException(60, '您不能自己约见自己');
+            ApiException::Msgs(60, '您不能自己约见自己');
         }
 
         $meet = new business\MeetDB();
@@ -219,14 +219,14 @@ class Meet
                 $meet->minutes = intval($lesson['lesson_hour']);
                 $meet->price = $lesson['lesson_price'];
             } else {
-                throw new ApiException(ApiException::WRONG_PARAM);
+                ApiException::Msgs(ApiException::WRONG_PARAM);
             }
         } elseif ($meet_type == Meet::TYPE_ASK) {
             $meet->price = $user_price;
             $user_price = -1;
             $meet->minutes = 0;
         } else {
-            throw new ApiException(ApiException::WRONG_PARAM);
+            ApiException::Msgs(ApiException::WRONG_PARAM);
         }
         $meet->fee_rate = Yii::$app->params['fee_rate'];
         $meet->user_price = $user_price;
@@ -409,7 +409,7 @@ class Meet
     {
         $meet = Meet::info($meet_id);
         if ($meet['status'] != Meet::EXPERT_ACCEPT) {
-            throw new ApiException(51, '预约状态不正确');
+            ApiException::Msgs(51, '预约状态不正确');
         }
         //$p = PayLog::model()->findByAttributes(array('meet_id' => $meet_id, 'status' => array(1, 2)))
         if ($p = business\PayLog::find()->where(['meet_id'=>$meet_id,'status'=>[1,2]])->one()) {
@@ -550,30 +550,30 @@ class Meet
     static public function check($uid, $expert_id, $meet_type)
     {
 //        if (!self::checkMeetValid($uid, $expert_id)) {
-//            throw new ApiException(62, '约见未结束时不能再次提交预约');
+//            ApiException::Msgs(62, '约见未结束时不能再次提交预约');
 //        }
 
         $user = User::info($uid);
         if ($user['expert'] == $expert_id) {
-            throw new ApiException(63, '大咖不可以约见自己');
+            ApiException::Msgs(63, '大咖不可以约见自己');
         }
 
         $platform = Yii::$app->request->post('platform');
         $ver = Yii::$app->request->post('ver');
         if (!($platform == 2 && version_compare($ver, '1.4') < 0)) {
             if (strstr($user['icon'], 'default')) {
-                throw new ApiException(64, '推荐使用真实头像，让大咖对您有一个直观的认识，可以提高约见成功率哦！');
+                ApiException::Msgs(64, '推荐使用真实头像，让大咖对您有一个直观的认识，可以提高约见成功率哦！');
             }
         }
 
 //        if ($meet_type == 2) {
 //            if (!self::checkPeriodValid($expert_id)) {
-//                throw new ApiException(66, '该大咖无法继续接受顾问邀请');
+//                ApiException::Msgs(66, '该大咖无法继续接受顾问邀请');
 //            }
 //        }
 
 //        if (!$user['intro']) {
-//            throw new ApiException(65, '请填写个人介绍');
+//            ApiException::Msgs(65, '请填写个人介绍');
 //        }
     }
 
@@ -615,14 +615,14 @@ class Meet
     {
         $meet = Meet::info($meet_id);
         if ($meet['status'] == Meet::USER_CANCEL) {
-            throw new ApiException(52, '预约已被对方取消');
+            ApiException::Msgs(52, '预约已被对方取消');
         }
         if ($meet['status'] != Meet::AUDIT_ACCEPT && $meet['status'] != Meet::CREATE) {
-            throw new ApiException(51, '预约状态不正确');
+            ApiException::Msgs(51, '预约状态不正确');
         }
         $expert = Expert::info($meet['expert_id']);
         if ($expert['uid'] != $uid) {
-            throw new ApiException(ApiException::NO_RIGHT);
+            ApiException::Msgs(ApiException::NO_RIGHT);
         }
         if ($choose == 1) {
             Meet::newToRun($meet_id, 'expert', $meet['expert_id']);
@@ -644,7 +644,7 @@ class Meet
                 Meet::newToDone($meet_id, 'expert', $meet['expert_id']);
             }
         } else {
-            throw new ApiException(ApiException::WRONG_PARAM);
+            ApiException::Msgs(ApiException::WRONG_PARAM);
         }
 
         $now = date('Y-m-d H:i:s');
