@@ -285,8 +285,10 @@ class Expert
             }
         }
 
-        Yii::log('expert score count:' . json_encode($expert_score_count), 'warning');
-        Yii::log('expert score sum:' . json_encode($expert_score_sum), 'warning');
+        //Yii::log('expert score count:' . json_encode($expert_score_count), 'warning');
+        Yii::warning('expert score count:' . json_encode($expert_score_count));
+        //Yii::log('expert score sum:' . json_encode($expert_score_sum), 'warning');
+        Yii::warning('expert score sum:' . json_encode($expert_score_sum));
 
 //        $base_score = $max_score - $min_score - max($expert_score_sum);
 //        $result = array();
