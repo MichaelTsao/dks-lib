@@ -95,8 +95,8 @@ class Expert
 
         if ($labels = Yii::$app->redis->zrange('expert_label:' . $expert_id, 0, -1)) {
             $info['labels_id'] = $labels;
-            $label_name = array();
-            $label_all = array();
+            $label_name = [];
+            $label_all = [];
             foreach ($labels as $l) {
                 $sql = "select name, remark from adept_label where id=$l";
                 $label_info = Yii::$app->db->createCommand($sql)->queryOne();
@@ -106,9 +106,9 @@ class Expert
             $info['labels'] = $label_name;
             $info['labels_info'] = $label_all;
         } else {
-            $info['labels_id'] = array();
-            $info['labels'] = array();
-            $info['labels_info'] = array();
+            $info['labels_id'] = [];
+            $info['labels'] = [];
+            $info['labels_info'] = [];
         }
 
 
@@ -124,14 +124,14 @@ class Expert
             list($comment, $count) = Meet::comment($expert_id, 1, 1);
         }
         if (!$comment) {
-            $comment = array();
+            $comment = [];
         }
         $info['comment'] = $comment;
         $info['comment_count'] = $count;
 
         $meet_want = Yii::$app->redis->smembers('expert_meet_label:' . $expert_id);
         if (!$meet_want) {
-            $meet_want = array();
+            $meet_want = [];
         }
         $info['want_meet'] = $meet_want;
 
@@ -161,7 +161,7 @@ class Expert
         if (!$info) {
             return false;
         }
-        $topics = array();
+        $topics = [];
         foreach ($info as $one) {
             $topic_info = self::topicInfo($one);
             if (isset($topic_info['status']) && $topic_info['status'] == 1) {
@@ -178,7 +178,7 @@ class Expert
         if (!$topic) {
             $data = business\TopicDB::findOne($topic_id);
             if ($data) {
-                $topic = array();
+                $topic = [];
                 $topic['topic_id'] = $topic_id;
                 $topic['name'] = $data->name;
                 $topic['intro'] = $data->intro;
@@ -236,7 +236,7 @@ class Expert
                     $last = $lc;
                 }
                 $keys = array_rand($list, $last);
-                $a = array();
+                $a = [];
                 if ($last == 1) {
                     $a[] = $list[$keys];
                 } else {
@@ -267,8 +267,8 @@ class Expert
         $score_adjust = 2;
         $score_rate = 0.7;
 
-        $expert_score_sum = array();
-        $expert_score_count = array();
+        $expert_score_sum = [];
+        $expert_score_count = [];
         foreach ($tags as $tag) {
             $data = Yii::$app->redis->zrange('label_expert:' . $tag, 0, -1, 'WITHSCORES');
             foreach ($data as $expert_id => $score) {
@@ -291,13 +291,13 @@ class Expert
         Yii::warning('expert score sum:' . json_encode($expert_score_sum));
 
 //        $base_score = $max_score - $min_score - max($expert_score_sum);
-//        $result = array();
+//        $result = [];
 //        foreach ($expert_score_sum as $expert_id => $sum) {
 //            $result[$expert_id] = $min_score + round($expert_score_count[$expert_id] / count($tags) * $base_score) + $sum;
 //        }
 //        return $result;
 
-        $result = array();
+        $result = [];
         $ct = count($tags);
         $score_used = $max_score - $min_score;
         $s = $score_used * $score_rate;
