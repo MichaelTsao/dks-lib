@@ -57,7 +57,7 @@ class Expert
             $info['want_people'] = business\UserFav::find()
                 ->where(['expert_id' => $expert_id])
                 ->count();
-            //Yii::$app->redis->hmset($key, $info);
+            //RedisCommon::setHash_Array($key, $info);
             RedisCommon::setHash_Array($key, $info);
         }
         $info['locations'] = self::getLocations($info['expert_id']);

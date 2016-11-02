@@ -119,7 +119,7 @@ class TestCommand extends Controller
 //            'status' => Meet::CHAT,
 //            'chat_time' => $now,
 //        );
-//        Yii::$app->redis->hmset('meet:'.$meet_id, $data);
+//        RedisCommon::setHash_Array('meet:'.$meet_id, $data);
 //        MeetDB::model()->updateByPk($meet_id, $data);
 //        $meet = Meet::info($meet_id);
 //
@@ -170,7 +170,7 @@ class TestCommand extends Controller
             'comment_time' => null,
         ];
         Yii::$app->db->createCommand()->update('meet', $data, 'meet_id='.$meet_id)->execute();
-        //Yii::$app->redis->hmset('meet:'.$meet_id, $data);
+        //RedisCommon::setHash_Array('meet:'.$meet_id, $data);
         //Meet::doneToRun($meet_id, 'user', $info['uid']);
     }
 

@@ -153,7 +153,7 @@ class AlipaySDK
         $para = $this->buildRequestPara($para_temp);
 
         //$sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='" . $this->alipay_gateway_new . "' method='" . $method . "'>";
-        $sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='/index.php?r=user/register' method='" . $method . "'>";
+        $sHtml = "<form id='alipaysubmit' name='alipaysubmit' action='http://api2.test.hangjiashuo.com.cn/meet/comment' method='" . $method . "'>";
         while (list ($key, $val) = each($para)) {
             $sHtml .= "<input type='hidden' name='" . $key . "' value='" . $val . "'/>";
         }

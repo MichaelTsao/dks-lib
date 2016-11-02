@@ -21,9 +21,7 @@ class RedisCommon extends Connection
      * @return bool
      */
     public static function setHash_Array($key,$info=[]){
-        if($info===[] || !is_array($info)){
-            return false;
-        }
+        if($info===[] || !is_array($info))  ApiException::Msgs(99, '使用 setHash_Array 方法 参数 info 不是数组');
         foreach ($info as $k=>$v){
             Yii::$app->redis->hmset($key, $k, $v);
         }
