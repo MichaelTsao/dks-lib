@@ -437,7 +437,7 @@ class Meet
             return;
         }
 
-        Yii::$app->redis->hdel($type . '_meet:new:' . $id, $meet_id);
+        Yii::$app->redis->del($type . '_meet:new:' . $id, $meet_id);
         Yii::$app->redis->zadd($type . '_meet:run:' . $id, time(), $meet_id);
     }
 
@@ -448,8 +448,8 @@ class Meet
             return;
         }
 
-        Yii::$app->redis->hdel($type . '_meet:new:' . $id, $meet_id);
-        Yii::$app->redis->hdel($type . '_meet:new+run:' . $id, $meet_id);
+        Yii::$app->redis->del($type . '_meet:new:' . $id, $meet_id);
+        Yii::$app->redis->del($type . '_meet:new+run:' . $id, $meet_id);
         Yii::$app->redis->zadd($type . '_meet:done:' . $id, time(), $meet_id);
     }
 
@@ -460,8 +460,8 @@ class Meet
             return;
         }
 
-        Yii::$app->redis->hdel($type . '_meet:run:' . $id, $meet_id);
-        Yii::$app->redis->hdel($type . '_meet:new+run:' . $id, $meet_id);
+        Yii::$app->redis->del($type . '_meet:run:' . $id, $meet_id);
+        Yii::$app->redis->del($type . '_meet:new+run:' . $id, $meet_id);
         Yii::$app->redis->zadd($type . '_meet:done:' . $id, time(), $meet_id);
     }
 
@@ -472,7 +472,7 @@ class Meet
             return;
         }
 
-        Yii::$app->redis->hdel($type . '_meet:done:' . $id, $meet_id);
+        Yii::$app->redis->del($type . '_meet:done:' . $id, $meet_id);
         Yii::$app->redis->zadd($type . '_meet:run:' . $id, time(), $meet_id);
         //Yii::$app->redis->zadd($type.'_meet:new+run:'.$id, time(), $meet_id);
     }
