@@ -41,9 +41,9 @@ class Meet
         $key = "meet:" . $meet_id;
         $info = Yii::$app->redis->hgetall($key);
         if (!$info || count($info) != 38) {
-            $data = business\MeetDB::findOne($meet_id)->toArray();
-            if ($data) {
-                $info = $data;
+            $data1 = business\MeetDB::findOne($meet_id);
+            if ($data1) {
+                $info = $data1->toArray();
                 if ($info['meet_type'] == Meet::TYPE_SINGLE) {
                     $h = $info['minutes'] / 60;
                     if ($h == 0.5) {
