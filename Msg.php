@@ -192,7 +192,7 @@ class Msg extends Component
             if ($fake) {
                 $msg = str_replace($key, 'XXX', $msg);
             } else {
-                $value_name = str_replace('_', '', lcfirst(ucwords(strtolower(substr($key, 1, -1)), '_')));
+                $value_name = str_replace('_', '', lcfirst(ucwords(strtolower(substr($key, 1, -1)))));
                 $msg = str_replace($key, $this->$value_name, $msg);
             }
         }
