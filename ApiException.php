@@ -1,6 +1,8 @@
 <?php
 namespace mycompany\common;
 
+use Yii;
+use yii\base\Exception;
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -22,12 +24,18 @@ class ApiException
     const USER_NOT_EXIST = 10;
     const USER_CLOSED = 11;
 
-    static public function Msgs($code, $msg='') {
+    static public function Msgs($code, $msg='', $e=false) {
         $msgs = self::getMsgs();
         $msg = isset($msgs[$code]) ? $msgs[$code] : $msg;
-        $result['result'] = $code;
-        $result['msg'] = $msg;
-        exit(json_encode($result));
+        var_dump($e);
+        if($e){
+            throw new Exception($msg, $code);
+        }else{
+            $result['result'] = $code;
+            $result['msg'] = $msg;
+            exit(json_encode($result));
+        }
+
         //parent::__construct($msg, $code);
     }
     static public function getMsgs(){

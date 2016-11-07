@@ -104,7 +104,7 @@ class Meet
                 $info['fee_rate'] = floatval($info['fee_rate']);
                 RedisCommon::setHash_Array($key, $info);
             } else {
-                ApiException::Msgs(ApiException::MEET_NOT_EXIST);
+                ApiException::Msgs(ApiException::MEET_NOT_EXIST,'',true);
             }
         }
 
