@@ -27,7 +27,6 @@ class ApiException
     static public function Msgs($code, $msg='', $e=false) {
         $msgs = self::getMsgs();
         $msg = isset($msgs[$code]) ? $msgs[$code] : $msg;
-        var_dump($e);
         if($e){
             throw new Exception($msg, $code);
         }else{
