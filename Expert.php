@@ -98,7 +98,7 @@ class Expert
             $label_name = [];
             $label_all = [];
             foreach ($labels as $l) {
-                $sql = "select name, remark from adept_label where id=$l";
+                $sql = "select name, remark from adept_label where id='".$l."'";
                 $label_info = Yii::$app->db->createCommand($sql)->queryOne();
                 $label_name[] = $label_info['name'];
                 $label_all[] = $label_info;
