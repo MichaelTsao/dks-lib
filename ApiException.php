@@ -34,8 +34,6 @@ class ApiException
             $result['msg'] = $msg;
             exit(json_encode($result));
         }
-
-        //parent::__construct($msg, $code);
     }
     static public function getMsgs(){
         return $msgs = [
@@ -53,12 +51,4 @@ class ApiException
             self::USER_CLOSED => '您的帐号已被冻结,您可以与我们的客服联系，了解冻结原因及申请解除冻结',
         ];
     }
-
-//    static public function handle(ExceptionEvent $event){
-//        $e = $event->exception;
-//        if ($e instanceof ApiException && !Yii::$app->request->isAjax()) {
-//            Logic::makeResult($e->data, $e->pager, $e->code, $e->message);
-//            $event->handled = true;
-//        }
-//    }
 }
