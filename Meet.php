@@ -108,7 +108,7 @@ class Meet
             }
         }
 
-        $sql = "select refund_reason, confirm_time from meet_refund where meet_id=$meet_id and tranfer_result=1";
+        $sql = "select refund_reason, confirm_time from meet_refund where meet_id='".$meet_id."' and tranfer_result=1";
         if ($refund = Yii::$app->db->createCommand($sql)->queryOne()) {
             $info['refund_time'] = $refund['confirm_time'];
             $info['refund_reason'] = $refund['refund_reason'];
@@ -118,7 +118,7 @@ class Meet
         }
 
         $comment_images = [];
-        $sql = "select image from meet_comment_img where meet_id=$meet_id and status=1 ORDER BY sort";
+        $sql = "select image from meet_comment_img where meet_id='".$meet_id."' and status=1 ORDER BY sort";
         $data = Yii::$app->db->createCommand($sql)->queryAll();
         foreach ($data as $item) {
             $comment_images[] = Logic::imagePath($item['image'], 'comment');
@@ -162,7 +162,7 @@ class Meet
         $info['expert_remind'] = isset(Yii::$app->params['meet_expert_remind'][$info['status']]) ?
             Yii::$app->params['meet_expert_remind'][$info['status']] : '';
 
-        $sql = "select id from meet_withdraw where meet_id=$meet_id and status=3";
+        $sql = "select id from meet_withdraw where meet_id='".$meet_id."' and status=3";
         $w = Yii::$app->db->createCommand($sql)->queryScalar();
         if ($w) {
             $info['withdraw'] = 1;
@@ -171,7 +171,7 @@ class Meet
         }
 
         if ($info['meet_type'] == Meet::TYPE_LESSON) {
-            $sql = "SELECT lesson_name, lesson_price, lesson_hour FROM expert_lesson WHERE id=" . $info['topic_id'];
+            $sql = "SELECT lesson_name, lesson_price, lesson_hour FROM expert_lesson WHERE id='" . $info['topic_id'] . "'";
             $info['lesson'] = Yii::$app->db->createCommand($sql)->queryOne();
         } else {
             $info['lesson'] = new \stdClass();
@@ -289,7 +289,7 @@ class Meet
                 $comment_one['title'] = $user['title'];
 
                 $comment_one['image'] = [];
-                $sql = "select image from meet_comment_img where meet_id=$c and status=1 ORDER BY sort";
+                $sql = "select image from meet_comment_img where meet_id='".$c."' and status=1 ORDER BY sort";
                 $data = Yii::$app->db->createCommand($sql)->queryAll();
                 foreach ($data as $item) {
                     $comment_one['image'][] = Logic::imagePath($item['image'], 'comment');
@@ -335,7 +335,7 @@ class Meet
         foreach ($comment as $key => $c) {
             $comment_one = [];
             if (intval($c) > 0) {
-                $sql = "select image from meet_comment_img where meet_id=$c and status=1 ORDER BY sort";
+                $sql = "select image from meet_comment_img where meet_id='".$c."' and status=1 ORDER BY sort";
                 $data = Yii::$app->db->createCommand($sql)->queryAll();
                 foreach ($data as $item) {
                     $comment_one['image'][] = Logic::imagePath($item['image'], 'comment');
@@ -660,7 +660,7 @@ class Meet
         }
         RedisCommon::setHash_Array('meet:' . $meet_id, $param);
 
-        Yii::$app->db->createCommand()->update('meet', $param, 'meet_id='.$meet_id)->execute();
+        Yii::$app->db->createCommand()->update("meet", $param, "meet_id='".$meet_id."'")->execute();
         if ($choose == 1) {
             if ($meet['user_price'] == 0) {
                 $msg = new Msg($meet_id, 'after_accept_without_pay');
