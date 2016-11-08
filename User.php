@@ -104,7 +104,12 @@ class User
                 $info['intro'] = strval($data['intro']);
                 $info['title'] = strval($data['title']);
                 $info['company'] = strval($data['company']);
-
+                if ($data['password']) {
+                    $info['password'] = 1;
+                } else {
+                    $info['password'] = 0;
+                }
+                
                 $expert = business\ExpertDB::findOne(['uid'=>$uid]);
                 if ($expert) {
                     $info['expert'] = intval($expert->expert_id);
