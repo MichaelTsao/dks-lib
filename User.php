@@ -109,7 +109,7 @@ class User
                 } else {
                     $info['password'] = 0;
                 }
-                
+
                 $expert = business\ExpertDB::findOne(['uid'=>$uid]);
                 if ($expert) {
                     $info['expert'] = intval($expert->expert_id);

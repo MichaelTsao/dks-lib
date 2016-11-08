@@ -18,6 +18,7 @@ class WeiXinSDK
     public $appPayKey = '';
     public $certFile = '';
     public $certKey = '';
+    private $_isSub = null;
 
     public function __construct($appId, $appSecret, $mchId = '', $paykey = '', $cert_file = '', $key_file = '')
     {
@@ -205,5 +206,31 @@ class WeiXinSDK
             return false;
         }
         return $refund_id;
+    }
+    /*
+    * 接口方式获取用户信息
+    */
+    public function getInfoFromServer($open_id)
+    {
+        $token = $this->getAccessToken();
+        $url = "https://api.weixin.qq.com/cgi-bin/user/info?access_token=$token&openid=$open_id&lang=zh_CN";
+        $info = Logic::request($url);
+        return json_decode($info, true);
+    }
+
+    /*
+    * 检查用户是否关注公众号
+    */
+    public function checkSub($open_id)
+    {
+        if ($this->_isSub === null) {
+            $info = $this->getInfoFromServer($open_id);
+            if (isset($info['subscribe']) && $info['subscribe'] == 1) {
+                $this->_isSub = true;
+            } else {
+                $this->_isSub = false;
+            }
+        }
+        return $this->_isSub;
     }
 }
