@@ -65,7 +65,7 @@ class Expert
 
         $sql = "select f.name 
                 from expert_field e, field f
-                where expert_id=$expert_id and e.field_id=f.id
+                where expert_id='".$expert_id."' and e.field_id=f.id
                 order by e.sort";
         $fields = Yii::$app->db->createCommand($sql)->queryColumn();
         $brief = implode('，', $fields);
@@ -73,7 +73,7 @@ class Expert
 
         $sql = "select id, lesson_name, lesson_price, lesson_hour, lesson_desc
                 from expert_lesson
-                where expert_id=$expert_id and lesson_status=1";
+                where expert_id='".$expert_id."' and lesson_status=1";
         $lessons = Yii::$app->db->createCommand($sql)->queryAll();
         $info['lesson'] = $lessons;
 
@@ -136,7 +136,7 @@ class Expert
         $info['want_meet'] = $meet_want;
 
         if (Yii::$app->request->post('platform') == 5) {
-            $sql = "select name from expert_label where expert_id=$expert_id";
+            $sql = "select name from expert_label where expert_id='".$expert_id."'";
             $labels = Yii::$app->db->createCommand($sql)->queryAll();
             $l = [];
             foreach ($labels as $label) {
@@ -201,7 +201,7 @@ class Expert
         if ($resident) {
             return $resident;
         } elseif ($location_id) {
-            return Yii::$app->db->createCommand("select name from location where id=$location_id")->queryScalar();
+            return Yii::$app->db->createCommand("select name from location where id='".$location_id."'")->queryScalar();
         } else {
             return '北京';
         }
@@ -210,14 +210,14 @@ class Expert
     public static function getLocations($expert_id)
     {
         $sql = "select l.name from expert_location el, location l 
-                where el.expert_id=$expert_id and el.location_id=l.id
+                where el.expert_id='".$expert_id."' and el.location_id=l.id
                 order by el.sort";
         return Yii::$app->db->createCommand($sql)->queryColumn();
     }
 
     static public function getField($field_id)
     {
-        return Yii::$app->db->createCommand("select name from field where id=$field_id")->queryScalar();
+        return Yii::$app->db->createCommand("select name from field where id='".$field_id."'")->queryScalar();
     }
 
     static public function getPoolList($id)
@@ -256,7 +256,7 @@ class Expert
             ApiException::Msgs(ApiException::WRONG_PARAM);
         }
         //ExpertDB::model()->updateByPk($expert_id, array($type => $info));
-        Yii::$app->db->createCommand()->update('expert', [$type => $info], 'expert_id = '.$expert_id)->execute();
+        Yii::$app->db->createCommand()->update("expert", [$type => $info], "expert_id = '".$expert_id."'")->execute();
         Yii::$app->redis->hset('expert:' . $expert_id, $type, $info);
     }
 
