@@ -469,7 +469,11 @@ class Logic
             }
         }
         if ($path) {
-            return Yii::$app->params['img_host'] . $path;
+            if (substr($path, 0, 7) == 'http://') {
+                return $path;
+            } else {
+                return Yii::$app->params['img_host'] . $path;
+            }
         } else {
             return '';
         }
