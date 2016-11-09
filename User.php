@@ -139,7 +139,7 @@ class User
     static public function expertID($uid){
         $user = self::info($uid);
         if (!$user['expert']) {
-            ApiException::Msgs(ApiException::USER_NOT_EXPERT);
+            ApiException::Msgs(ApiException::USER_NOT_EXPERT,'',true);
         }
         return $user['expert'];
     }
