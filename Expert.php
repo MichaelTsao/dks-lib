@@ -35,7 +35,7 @@ class Expert
                     ->one();
             }
             if (!$info) {
-                ApiException::Msgs(ApiException::EXPERT_NOT_EXIST);
+                ApiException::Msgs(ApiException::EXPERT_NOT_EXIST,'',true);
             }
             $info['real_price'] = $info['price'];
             $info['price'] = $info['price'] * $info['meet_hour'];
