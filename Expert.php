@@ -271,6 +271,7 @@ class Expert
         $expert_score_count = [];
         foreach ($tags as $tag) {
             $data = Yii::$app->redis->zrange('label_expert:' . $tag, 0, -1, 'WITHSCORES');
+            $data = RedisCommon::hashToArray($data);
             foreach ($data as $expert_id => $score) {
                 if (isset($expert_score_sum[$expert_id])) {
                     $expert_score_sum[$expert_id] += $score * $score_adjust;
