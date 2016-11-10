@@ -27,11 +27,12 @@ class ApiException
     static public function Msgs($code, $msg='', $e=false) {
         $msgs = self::getMsgs();
         $msg = isset($msgs[$code]) ? $msgs[$code] : $msg;
-        if($e){
+        if($e===true){
             throw new Exception($msg, $code);
         }else{
             $result['result'] = $code;
             $result['msg'] = $msg;
+            $e ? $result['data']=$e : 0;
             exit(json_encode($result));
         }
     }
