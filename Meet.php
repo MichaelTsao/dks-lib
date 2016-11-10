@@ -549,32 +549,49 @@ class Meet
 
     static public function check($uid, $expert_id, $meet_type)
     {
-//        if (!self::checkMeetValid($uid, $expert_id)) {
-//            ApiException::Msgs(62, '约见未结束时不能再次提交预约');
-//        }
-
         $user = User::info($uid);
+        $platform = Yii::$app->request->post('platform');
+        $ver = Yii::$app->request->post('ver');
+
         if ($user['expert'] == $expert_id) {
             ApiException::Msgs(63, '大咖不可以约见自己');
         }
 
-        $platform = Yii::$app->request->post('platform');
-        $ver = Yii::$app->request->post('ver');
-        if (!($platform == 2 && version_compare($ver, '1.4') < 0)) {
-            if (strstr($user['icon'], 'default')) {
-                ApiException::Msgs(64, '推荐使用真实头像，让大咖对您有一个直观的认识，可以提高约见成功率哦！');
+        if ($platform != 5) {
+            if (!($platform == 2 && version_compare($ver, '1.4') < 0) && version_compare($ver, '2.4') < 0) {
+                if (strstr($user['icon'], 'default')) {
+                    ApiException::Msgs(64, '推荐使用真实头像，让大咖对您有一个直观的认识，可以提高约见成功率哦！');
+                }
             }
         }
 
-//        if ($meet_type == 2) {
-//            if (!self::checkPeriodValid($expert_id)) {
-//                ApiException::Msgs(66, '该大咖无法继续接受顾问邀请');
-//            }
-//        }
+        if (version_compare($ver, '2.4') >= 0 || $platform == 5) {
+            $error = [];
+            if (!$user['realname']) {
+                $error[] = 'name';
+            }
+            if ($meet_type != Meet::TYPE_ASK) {
+                if (strstr($user['icon'], 'default')) {
+                    $error[] = 'icon';
+                }
+                if (!$user['gender']) {
+                    $error[] = 'gender';
+                }
+                if (!$user['company']) {
+                    $error[] = 'company';
+                }
+                if (!$user['title']) {
+                    $error[] = 'title';
+                }
+                if (!Logic::validatePhone($user['phone'])) {
+                    $error[] = 'phone';
+                }
+            }
+            if ($error) {
+                ApiException::Msgs(65, '请补全用户信息', $error);
+            }
+        }
 
-//        if (!$user['intro']) {
-//            ApiException::Msgs(65, '请填写个人介绍');
-//        }
     }
 
     // TODO: maybe better way
