@@ -368,7 +368,7 @@ class Logic
             } else {
                 $i = pathinfo($file["name"]);
                 $new_name = "i_" . $uid . "_" . md5($file["name"] . rand(100, 999)) . '.' . $i['extension'];
-                $new_file = Yii::getPathOfAlias('webroot.images.' . $type) . '/' . $new_name;
+                $new_file = Yii::getAlias('@images/' . $type . '/' . $new_name);
                 move_uploaded_file($file["tmp_name"], $new_file);
                 self::fixImage($new_file);
                 return [0, $new_name];
@@ -394,7 +394,7 @@ class Logic
             } else {
                 $i = pathinfo($file["name"]);
                 $new_name = md5($file["name"] . rand(100, 999)) . '.' . $i['extension'];
-                $new_file = Yii::getPathOfAlias('application.' . $type) . '/' . $new_name;
+                $new_file = Yii::getAlias('@dksfile/' . $type . '/' . $new_name);
                 move_uploaded_file($file["tmp_name"], $new_file);
                 return [0, $new_name];
             }
@@ -532,7 +532,7 @@ class Logic
     {
         $seconds = false;
         $output = [];
-        $full_file = Yii::getPathOfAlias('application.answer') . '/' . $file;
+        $full_file = Yii::getAlias('@answer' . '/' . $file);
         exec(Yii::$app->params['ffmpeg_cmd'] . " -i $full_file -f null - 2>&1", $output);
         foreach ($output as $line) {
             if (strstr($line, 'time') !== false) {
@@ -553,7 +553,7 @@ class Logic
     {
         $path_parts = pathinfo($amr);
         $new_name = $path_parts['filename'] . '.mp3';
-        $path = Yii::getPathOfAlias('application.answer');
+        $path = Yii::getAlias('@answer');
         $name = $path . '/' . $new_name;
         exec(Yii::$app->params['ffmpeg_cmd'] . " -i $path/$amr -ar 22050 -write_xing 0 $name");
         return $new_name;

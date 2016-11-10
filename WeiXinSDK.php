@@ -172,7 +172,7 @@ class WeiXinSDK
         $url = "http://file.api.weixin.qq.com/cgi-bin/media/get?access_token=$token&media_id=$media_id";
         if ($data = Logic::request($url)) {
             $new_name = md5($media_id . rand(100, 999)) . '.amr';
-            $file_name = Yii::getPathOfAlias('application.answer') . '/' . $new_name;
+            $file_name = Yii::getAlias('@answer' . '/' . $new_name);
             file_put_contents($file_name, $data);
             return $new_name;
         }

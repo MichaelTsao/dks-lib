@@ -46,7 +46,7 @@ class UnionPay
         // init
         $params = $_POST;
         clearstatcache();
-        $filePath = Yii::getPathOfAlias('application.data.certs') . '/acp_prod_verify_sign.cer';
+        $filePath = Yii::getAlias('@certs' . '/acp_prod_verify_sign.cer');
 
         // verify cert id
         list($cert_id, $cert_key) = $this->readCer($filePath);
@@ -186,7 +186,7 @@ class UnionPay
 
     private function encrypt($params, $type='payout')
     {
-        $key_file = parse_ini_file(Yii::getPathOfAlias('application.data.unionpay') . '/MerPrK_808080211304400_20160809154600.key');
+        $key_file = parse_ini_file(Yii::getAlias('@unionpay' . '/MerPrK_808080211304400_20160809154600.key'));
         if (!$key_file) {
             return false;
         }
