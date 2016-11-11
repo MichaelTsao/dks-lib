@@ -2,7 +2,8 @@
 namespace mycompany\common;
 
 use Yii;
-use yii\base\Exception;
+use yii\web\HttpException;
+
 /**
  * Created by PhpStorm.
  * User: caoxiang
@@ -27,11 +28,12 @@ class ApiException
     static public function Msgs($code, $msg='', $e=false) {
         $msgs = self::getMsgs();
         $msg = isset($msgs[$code]) ? $msgs[$code] : $msg;
+        $result['result'] = $code;
+        $result['msg'] = $msg;
         if($e===true){
-            throw new Exception($msg, $code);
+            $m = json_encode($result);
+            throw new HttpException(200,$m);
         }else{
-            $result['result'] = $code;
-            $result['msg'] = $msg;
             $e ? $result['data']=$e : 0;
             exit(json_encode($result));
         }
