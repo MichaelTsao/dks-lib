@@ -14,9 +14,9 @@ class SortList extends RedisCommon
 
     public function create($data)
     {
-        $this->redis->DEL($this->key);
+        $this->redis->del($this->key);
         foreach ($data as $item => $value) {
-            $this->redis->ZADD($this->buildKey($this->key), $value, $item);
+            $this->redis->zadd($this->buildKey($this->key), $value, $item);
         }
     }
 }
