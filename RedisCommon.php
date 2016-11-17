@@ -20,9 +20,8 @@ class RedisCommon extends Object
     public function init()
     {
         if (!$this->redis) {
-            if (!empty(Yii::$app->redis)) {
-                $this->redis = Yii::$app->redis;
-            }else{
+            $this->redis = Yii::$app->redis;
+            if (!$this->redis) {
                 throw new Exception('Please Config the Redis');
             }
         }
