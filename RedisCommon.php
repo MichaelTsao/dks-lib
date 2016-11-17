@@ -20,6 +20,7 @@ class RedisCommon extends Object
     public function init()
     {
         if (!$this->redis) {
+            var_dump(Yii::$app->redis);
             if (isset(Yii::$app->redis)) {
                 $this->redis = Yii::$app->redis;
             }else{
