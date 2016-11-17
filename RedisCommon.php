@@ -9,6 +9,7 @@
 namespace mycompany\common;
 
 use Yii;
+use yii\base\Exception;
 use yii\base\Object;
 
 class RedisCommon extends Object
@@ -18,8 +19,12 @@ class RedisCommon extends Object
 
     public function init()
     {
-        if (!$this->redis && isset(Yii::$app->redis)) {
-            $this->redis = Yii::$app->redis;
+        if (!$this->redis) {
+            if (isset(Yii::$app->redis)) {
+                $this->redis = Yii::$app->redis;
+            }else{
+                throw new Exception('Please Config the Redis');
+            }
         }
     }
 
