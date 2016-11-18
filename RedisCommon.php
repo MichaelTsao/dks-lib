@@ -12,10 +12,20 @@ use Yii;
 use yii\base\Exception;
 use yii\base\Object;
 
+/**
+ * Redis common functions
+ *
+ * @property string $key
+ * @property string $fullKey
+ * @property string $prefix
+ * @property \yii\redis\Connection $redis
+ *
+ */
 class RedisCommon extends Object
 {
     public $prefix = null;
     public $redis = null;
+    public $key = null;
 
     public function init()
     {
@@ -30,6 +40,11 @@ class RedisCommon extends Object
     public function buildKey($key)
     {
         return $this->prefix . $key;
+    }
+
+    public function getFullKey()
+    {
+        return $this->buildKey($this->key);
     }
 
     /**
