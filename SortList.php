@@ -14,11 +14,15 @@ class SortList extends RedisCommon
 
     public function create($data)
     {
-        $this->redis->del($this->key);
+        $this->redis->del($this->fullKey);
+        $this->set($data);
+    }
+
+    public function set($data)
+    {
         foreach ($data as $item => $value) {
             $this->redis->zadd($this->fullKey, $value, $item);
         }
-        return true;
     }
 
     public function getAll()
@@ -40,7 +44,6 @@ class SortList extends RedisCommon
         } else {
             $cmd = 'zrange';
         }
-        var_dump($this->fullKey);
         return $this->redis->$cmd($this->fullKey, $begin, $end);
     }
 }
