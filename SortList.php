@@ -25,12 +25,17 @@ class SortList extends RedisCommon
         }
     }
 
-    public function getAll()
+    public function count()
+    {
+        return $this->redis->zcount($this->fullKey, '-inf', '+inf');
+    }
+
+    public function all()
     {
         return $this->get(0, -1);
     }
 
-    public function getPage($page, $size)
+    public function page($page, $size)
     {
         $start = ($page - 1) * $size;
         $end = $page * $size - 1;
