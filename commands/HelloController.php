@@ -28,9 +28,10 @@ class HelloController extends Controller
      */
     public function actionIndex()
     {
-        $l = new SortList(['key' => 'a']);
-        $l->create(['b' => 10, 'c' => 3]);
-        $a = $l->getAll();
+        $l = new SortList(['key' => 'b']);
+//        $l->create(['b' => 10, 'c' => 3]);
+        $a = $l->all();
         var_dump($a);
+        var_dump($l->count());
     }
 }
