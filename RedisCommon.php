@@ -16,7 +16,6 @@ use yii\base\Object;
  * Redis common functions
  *
  * @property string $key
- * @property string $fullKey
  * @property string $prefix
  * @property \yii\redis\Connection $redis
  *
@@ -25,7 +24,7 @@ class RedisCommon extends Object
 {
     public $prefix = null;
     public $redis = null;
-    public $key = null;
+    protected $_key = null;
 
     public function init()
     {
@@ -37,14 +36,14 @@ class RedisCommon extends Object
         }
     }
 
-    public function buildKey($key)
+    public function setKey($key)
     {
-        return $this->prefix . $key;
+        return $this->_key = $key;
     }
 
-    public function getFullKey()
+    public function getKey()
     {
-        return $this->buildKey($this->key);
+        return $this->prefix . $this->_key;
     }
 
     /**

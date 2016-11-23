@@ -14,20 +14,20 @@ class SortList extends RedisCommon
 
     public function create($data)
     {
-        $this->redis->del($this->fullKey);
+        $this->redis->del($this->key);
         $this->set($data);
     }
 
     public function set($data)
     {
         foreach ($data as $item => $value) {
-            $this->redis->zadd($this->fullKey, $value, $item);
+            $this->redis->zadd($this->key, $value, $item);
         }
     }
 
     public function count()
     {
-        return $this->redis->zcount($this->fullKey, '-inf', '+inf');
+        return $this->redis->zcount($this->key, '-inf', '+inf');
     }
 
     public function all()
@@ -49,6 +49,6 @@ class SortList extends RedisCommon
         } else {
             $cmd = 'zrange';
         }
-        return $this->redis->$cmd($this->fullKey, $begin, $end);
+        return $this->redis->$cmd($this->key, $begin, $end);
     }
 }
