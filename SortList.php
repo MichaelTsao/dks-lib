@@ -12,6 +12,17 @@ class SortList extends RedisCommon
 {
     public $sort = SORT_DESC;
 
+    public function init()
+    {
+        parent::init();
+        $this->makeKey();
+    }
+
+    public function makeKey()
+    {
+        return;
+    }
+
     public function create($data)
     {
         $this->redis->del($this->key);
