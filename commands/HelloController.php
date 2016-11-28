@@ -7,9 +7,11 @@
 
 namespace app\commands;
 
+use mycompany\common\Result;
 use mycompany\common\SortList;
 use yii\console\Controller;
 use Yii;
+use yii\data\Pagination;
 use yii\redis\Connection;
 
 /**
@@ -28,10 +30,6 @@ class HelloController extends Controller
      */
     public function actionIndex()
     {
-        $l = new SortList(['key' => 'b']);
-//        $l->create(['b' => 10, 'c' => 3]);
-        $a = $l->all();
-        var_dump($a);
-        var_dump($l->count());
+        echo new Result(['data'=>[1,2,3], 'page' => new Pagination(['totalCount'=>10])]);
     }
 }
