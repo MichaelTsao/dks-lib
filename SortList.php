@@ -36,6 +36,16 @@ class SortList extends RedisCommon
         }
     }
 
+    public function increase($item, $value = 1)
+    {
+        $this->redis->zincrby($this->key, $value, $item);
+    }
+
+    public function decrease($item, $value = -1)
+    {
+        $this->increase($item, $value);
+    }
+
     public function count()
     {
         return $this->redis->zcount($this->key, '-inf', '+inf');
