@@ -7,6 +7,7 @@
 
 namespace app\commands;
 
+use mycompany\common\Logic;
 use mycompany\common\Result;
 use mycompany\common\SortList;
 use yii\console\Controller;
@@ -30,6 +31,7 @@ class HelloController extends Controller
      */
     public function actionIndex()
     {
-        echo new Result(['data'=>[1,2,3], 'page' => new Pagination(['totalCount'=>10])]);
+        $id = Logic::makeID();
+        echo $id.' '.strlen($id)."\n";
     }
 }
