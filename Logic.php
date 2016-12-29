@@ -114,67 +114,6 @@ class Logic
         return '';
     }
 
-    static public function uploadImage($type, $uid, $name = '')
-    {
-        if (!$name) {
-            $name = $type;
-        }
-
-        if (!$_FILES || !isset($_FILES[$name])) {
-            return [51, '文件不存在'];
-        }
-        $file = $_FILES[$name];
-        if ((($file["type"] == "image/gif")  // TODO: right picture type check
-                || ($file["type"] == "image/jpeg")
-                || ($file["type"] == "image/jpg")
-                || ($file["type"] == "image/pjpeg")
-                || ($file["type"] == "image/x-png")
-                || ($file["type"] == "image/png")
-                || ($file["type"] == "multipart/form-data")
-                || ($file["type"] == "application/octet-stream")
-            )
-            && ($file["size"] <= 1024 * 8000)
-        ) {
-            if ($file["error"] > 0) {
-                return [52, "错误: " . $file["error"]];
-            } else {
-                $i = pathinfo($file["name"]);
-                $new_name = "i_" . $uid . "_" . md5($file["name"] . rand(100, 999)) . '.' . $i['extension'];
-                $new_file = Yii::getAlias('@images/' . $type . '/' . $new_name);
-                move_uploaded_file($file["tmp_name"], $new_file);
-                self::fixImage($new_file);
-                return [0, $new_name];
-            }
-        } else {
-            return [53, "请检查文件的尺寸和大小！"];
-        }
-    }
-
-    static public function uploadFile($type, $name = '')
-    {
-        if (!$name) {
-            $name = $type;
-        }
-
-        if (!$_FILES || !isset($_FILES[$name])) {
-            return [51, '文件不存在'];
-        }
-        $file = $_FILES[$name];
-        if ($file["size"] <= 1024 * 8000) {
-            if ($file["error"] > 0) {
-                return [52, "错误: " . $file["error"]];
-            } else {
-                $i = pathinfo($file["name"]);
-                $new_name = md5($file["name"] . rand(100, 999)) . '.' . $i['extension'];
-                $new_file = Yii::getAlias('@dksfile/' . $type . '/' . $new_name);
-                move_uploaded_file($file["tmp_name"], $new_file);
-                return [0, $new_name];
-            }
-        } else {
-            return [53, "请检查文件的尺寸和大小！"];
-        }
-    }
-
     static public function fixImage($file)
     {
         $image = imagecreatefromjpeg($file);
@@ -226,5 +165,14 @@ class Logic
         $name = $path . '/' . $new_name;
         exec(Yii::$app->params['ffmpeg_cmd'] . " -i $path/$amr -ar 22050 -write_xing 0 $name");
         return $new_name;
+    }
+
+    public static function getImageHost()
+    {
+        if (isset(Yii::$app->params['imageHost'])) {
+            return Yii::$app->params['imageHost'];
+        } else {
+            return '';
+        }
     }
 }
