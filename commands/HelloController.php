@@ -31,7 +31,6 @@ class HelloController extends Controller
      */
     public function actionIndex()
     {
-        $id = Logic::makeID();
-        echo $id.' '.strlen($id)."\n";
+        echo Logic::friendlyDate('2016-10-02 10:23:00') . "\n";
     }
 }
