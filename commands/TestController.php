@@ -10,6 +10,7 @@ namespace app\commands;
 use mycompany\common\Logic;
 use mycompany\common\Result;
 use mycompany\common\SortList;
+use mycompany\common\WeiXin;
 use yii\console\Controller;
 use Yii;
 use yii\data\Pagination;
@@ -23,14 +24,18 @@ use yii\redis\Connection;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-class HelloController extends Controller
+class TestController extends Controller
 {
     /**
      * This command echoes what you have entered as the message.
      * @param string $message the message to be echoed.
      */
-    public function actionIndex()
+    public function actionIndex($code)
     {
-        echo Logic::friendlyDate('2016-10-02 10:23:00') . "\n";
+        $wx = new WeiXin([
+            'appId' => 'wxbd04c6f3a4768d5d',
+            'appSecret' => 'f5214b4c4e803229d524b844b640cd26',
+        ]);
+        var_dump($wx->codeToSession($code));
     }
 }

@@ -2,38 +2,27 @@
 namespace mycompany\common;
 
 use Yii;
-use yii\redis\Cache;
-use yii\redis\Connection;
+use yii\base\Object;
+use yii\httpclient\Client;
+
 /**
  * Created by PhpStorm.
  * User: caoxiang
  * Date: 15/9/21
  * Time: 下午6:46
  */
-class WeiXinSDK
+class WeiXin extends Object
 {
-    private $appId;
-    private $appSecret;
+    public $appId = '';
+    public $appSecret = '';
     public $appMchId = '';
     public $appPayKey = '';
     public $certFile = '';
     public $certKey = '';
     private $_isSub = null;
 
-    public function __construct($appId, $appSecret, $mchId = '', $paykey = '', $cert_file = '', $key_file = '')
-    {
-        $this->appId = $appId;
-        $this->appSecret = $appSecret;
-        $this->appMchId = $mchId;
-        $this->appPayKey = $paykey;
-        $this->certFile = $cert_file;
-        $this->certKey = $key_file;
-    }
-
     public function getSignPackage($url)
     {
-        //$url = "http://h5.cheshi.hangjiashuo.com/#/home";
-        //$url = Yii::app()->params['web_host'].'/api'.$_SERVER['REQUEST_URI'];
         $jsapiTicket = $this->getJsApiTicket();
         $timestamp = time();
         $nonceStr = $this->createNonceStr();
@@ -113,7 +102,7 @@ class WeiXinSDK
         return $res;
     }
 
-    public static function getNonceStr($length = 32)
+    public function getNonceStr($length = 32)
     {
         $chars = "abcdefghijklmnopqrstuvwxyz0123456789";
         $str = "";
@@ -207,6 +196,7 @@ class WeiXinSDK
         }
         return $refund_id;
     }
+
     /*
     * 接口方式获取用户信息
     */
@@ -232,5 +222,23 @@ class WeiXinSDK
             }
         }
         return $this->_isSub;
+    }
+
+    public function codeToSession($code)
+    {
+        $client = new Client();
+        $response = $client->createRequest()
+            ->setUrl("https://api.weixin.qq.com/sns/jscode2session")
+            ->setData([
+                'appid' => $this->appId,
+                'secret' => $this->appSecret,
+                'js_code' => $code,
+                'grant_type' => 'authorization_code',
+            ])
+            ->send();
+        if ($response->isOk && isset($response->data['openid'])) {
+            return $response->data;
+        }
+        return false;
     }
 }
