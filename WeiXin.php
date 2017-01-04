@@ -72,34 +72,27 @@ class WeiXin extends Object
 
     private function getAccessToken()
     {
-        //$access_token = Yii::app()->redis8->getClient()->get('wx_token');
-        $access_token = Yii::$app->redis8->get('wx_token');
+        $key = 'wx_token';
+        $access_token = Yii::$app->redis->get($key);
+
         if (!$access_token) {
-            // 如果是企业号用以下URL获取access_token
-            // $url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=$this->appId&corpsecret=$this->appSecret";
-            $url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=$this->appId&secret=$this->appSecret";
-            $res = json_decode($this->httpGet($url));
-            $access_token = $res->access_token;
-            if ($access_token) {
-                Yii::$app->redis->setex('wx_token', 7000, $access_token);
+            $client = new Client();
+            $response = $client->createRequest()
+                ->setUrl("https://api.weixin.qq.com/cgi-bin/token")
+                ->setData([
+                    'appid' => $this->appId,
+                    'secret' => $this->appSecret,
+                    'grant_type' => 'client_credential',
+                ])
+                ->send();
+
+            if ($response->isOk && isset($response->data['access_token'])) {
+                $access_token = $response->data['access_token'];
+                Yii::$app->redis->setex($key, 7000, $access_token);
             }
         }
+
         return $access_token;
-    }
-
-    private function httpGet($url)
-    {
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 500);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($curl, CURLOPT_URL, $url);
-
-        $res = curl_exec($curl);
-        curl_close($curl);
-
-        return $res;
     }
 
     public function getNonceStr($length = 32)
@@ -203,9 +196,21 @@ class WeiXin extends Object
     public function getInfoFromServer($open_id)
     {
         $token = $this->getAccessToken();
-        $url = "https://api.weixin.qq.com/cgi-bin/user/info?access_token=$token&openid=$open_id&lang=zh_CN";
-        $info = Logic::request($url);
-        return json_decode($info, true);
+
+        $client = new Client();
+        $response = $client->createRequest()
+            ->setUrl("https://api.weixin.qq.com/cgi-bin/user/info")
+            ->setData([
+                'access_token' => $token,
+                'openid' => $open_id,
+                'lang' => 'zh_CN',
+            ])
+            ->send();
+        if ($response->isOk) {
+            return $response->data;
+        }
+
+        return false;
     }
 
     /*

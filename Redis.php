@@ -20,7 +20,7 @@ use yii\base\Object;
  * @property \yii\redis\Connection $redis
  *
  */
-class RedisCommon extends Object
+class Redis extends Object
 {
     public $prefix = null;
     public $redis = null;
