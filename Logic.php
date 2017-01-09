@@ -20,6 +20,7 @@ class Logic
             $salt = "I'm a salt!";
         }
         $h = new Hashids($salt, 0, 'abcdefghijklmnopqrstuvwxyz0123456789');
+        $h->_lower_max_int_value = PHP_INT_MAX;
         return $h->encode(microtime(true) * 10000);
     }
 
