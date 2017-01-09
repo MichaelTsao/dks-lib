@@ -20,7 +20,7 @@ class Logic
             $salt = "I'm a salt!";
         }
         $h = new Hashids($salt, 0, 'abcdefghijklmnopqrstuvwxyz0123456789');
-        return $h->encode(microtime(true) * 10000);
+        return $h->encode(intval(microtime(true) * 10000));
     }
 
     static public function strBanned($str, $replace = false)
