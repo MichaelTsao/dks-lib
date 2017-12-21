@@ -1,11 +1,9 @@
 <?php
-namespace mycompany\common;
 
-use Yii;
-use yii\web\Application;
-use yii\console;
-use yii\log;
+namespace dakashuo\common;
+
 use DOMDocument;
+use Yii;
 
 /**
  * Created by PhpStorm.

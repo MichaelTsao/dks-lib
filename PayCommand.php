@@ -1,11 +1,11 @@
 <?php
-namespace mycompany\common;
 
-use Yii;
-use yii\base\Object;
-use yii\base\Component;
-use yii\console\Controller;
+namespace dakashuo\common;
+
 use mycompany\business;
+use Yii;
+use yii\console\Controller;
+
 /**
  * Created by PhpStorm.
  * User: caoxiang

@@ -1,5 +1,6 @@
 <?php
-namespace mycompany\common;
+
+namespace dakashuo\common;
 
 use Yii;
 use yii\base\Object;

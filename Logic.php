@@ -1,8 +1,9 @@
 <?php
-namespace mycompany\common;
 
-use Yii;
+namespace dakashuo\common;
+
 use Hashids\Hashids;
+use Yii;
 
 /**
  * Created by PhpStorm.

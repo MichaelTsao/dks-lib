@@ -7,14 +7,8 @@
 
 namespace app\commands;
 
-use mycompany\common\Logic;
-use mycompany\common\Result;
-use mycompany\common\SortList;
-use mycompany\common\WeiXin;
+use dakashuo\common\WeiXin;
 use yii\console\Controller;
-use Yii;
-use yii\data\Pagination;
-use yii\redis\Connection;
 
 /**
  * This command echoes the first argument that you have entered.

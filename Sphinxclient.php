@@ -1,5 +1,6 @@
 <?php
-namespace mycompany\common;
+
+namespace dakashuo\common;
 
 /**
  * 本文件由sphinx官方的sphinxapi.php改造而来，具体改造方法是，将sphinxapi.php改造为Sphinclient.php(注意大小写)

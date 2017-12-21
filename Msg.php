@@ -1,14 +1,16 @@
 <?php
-namespace mycompany\common;
 
+namespace dakashuo\common;
+
+use mycompany\business;
 use Yii;
+use yii\base\Component;
+
 //use yii\db\ActiveQuery;
 //use yii\db\ActiveRecord;
 //use yii\db\QueryBuilder;
 //use yii\data\ActiveDataProvider;//活动记录
-use yii\base\Object;
-use yii\base\Component;
-use mycompany\business;
+
 /**
  * Created by PhpStorm.
  * User: caoxiang

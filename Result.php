@@ -6,14 +6,14 @@
  * Time: 上午9:26
  */
 
-namespace mycompany\common;
+namespace dakashuo\common;
 
 use yii\base\Object;
 use yii\data\Pagination;
 
 /**
  * Class Result
- * @package mycompany\common
+ * @package dakashuo\common
  * @property Pagination page
  * @property mixed data
  * @property int code

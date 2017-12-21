@@ -1,7 +1,7 @@
 <?php
-namespace mycompany\common;
 
-use Yii;
+namespace dakashuo\common;
+
 use yii\web\HttpException;
 
 /**

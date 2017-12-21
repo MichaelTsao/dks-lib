@@ -1,7 +1,9 @@
 <?php
-namespace mycompany\common;
+
+namespace dakashuo\common;
 
 use Yii;
+
 /**
  * Created by PhpStorm.
  * User: caoxiang

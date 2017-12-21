@@ -6,7 +6,7 @@
  * Time: 17:31
  */
 
-namespace mycompany\common;
+namespace dakashuo\common;
 
 use Yii;
 use yii\base\Exception;

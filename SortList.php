@@ -6,7 +6,7 @@
  * Time: 下午2:42
  */
 
-namespace mycompany\common;
+namespace dakashuo\common;
 
 class SortList extends RedisCommon
 {
